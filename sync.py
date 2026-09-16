@@ -609,12 +609,19 @@ def main():
         if fail:
             sys.exit(2)
 
-    n_q = sum(len(r["items"]) for r in with_faq.values())
-    print(f"\n{len(with_faq)} FAQ pages, {n_q} Q&As, {len(changed)} changed\n")
+    # Report what actually goes into the schema, not what was scraped off the
+    # page -- dropped headings would otherwise inflate the number a human
+    # reads when deciding whether to apply.
+    published = {p_: len(n.get("mainEntity", [])) for p_, n in built.items()}
+    n_q = sum(published.values())
+    n_raw = sum(len(r["items"]) for r in with_faq.values())
+    extra = f" ({n_raw - n_q} dropped)" if n_raw != n_q else ""
+    print(f"\n{len(built)} FAQ pages, {n_q} Q&As published{extra}, "
+          f"{len(changed)} changed\n")
     for path in sorted(final):
         mark = "CHANGED" if path in changed else "  ok   "
         mode = "-" if final[path] is None else ("graph" if "@graph" in final[path] else "bare")
-        cnt = len(with_faq.get(path, {}).get("items", []))
+        cnt = published.get(path, 0)
         print(f"  {mark}  {path:34} q={cnt:<3} {mode}")
     for line in summary:
         print(" ", line)
