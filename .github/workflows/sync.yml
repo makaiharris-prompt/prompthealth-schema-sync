@@ -1,8 +1,10 @@
 name: FAQ schema sync
 
 on:
-  schedule:
-    - cron: "0 11 * * *"        # 07:00 America/New_York (EDT)
+  # Disabled until the two-page pilot confirms Webflow stores @graph correctly.
+  # Re-enable by uncommenting, then: git push
+  # schedule:
+  #   - cron: "0 11 * * *"      # 07:00 America/New_York (EDT)
   workflow_dispatch:
     inputs:
       apply:
@@ -13,6 +15,10 @@ on:
         description: "Allow the gated publish after writing"
         type: boolean
         default: false
+      only:
+        description: "Restrict to these paths, comma-separated (blank = all)"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -47,10 +53,14 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.publish }}" = "true" ]; then
             ARGS="$ARGS --publish"
           fi
+          if [ -n "${{ inputs.only }}" ]; then
+            ARGS="$ARGS --only ${{ inputs.only }}"
+          fi
+          echo "running: sync.py $ARGS"
           python3 sync.py $ARGS 2>&1 | tee run.log
 
       - name: Commit updated snapshots
-        if: always()
+        if: always() && inputs.only == ''
         run: |
           git config user.name  "faq-schema-sync"
           git config user.email "actions@github.com"
