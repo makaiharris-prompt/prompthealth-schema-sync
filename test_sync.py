@@ -327,5 +327,47 @@ class ApiLimits(unittest.TestCase):
                             for e in sync.validate_local("/x", doc)))
 
 
+class NoIndex(unittest.TestCase):
+    """noindex pages are deliberately out of search; schema cannot help them."""
+
+    def test_detects_content_first(self):
+        self.assertTrue(faqparse.extract(
+            '<meta content="noindex" name="robots"/>')["noindex"])
+
+    def test_detects_name_first(self):
+        self.assertTrue(faqparse.extract(
+            '<meta name="robots" content="noindex, nofollow">')["noindex"])
+
+    def test_plain_page_is_not_noindex(self):
+        self.assertFalse(faqparse.extract("<html><body>hi</body></html>")["noindex"])
+
+    def test_index_directive_is_not_noindex(self):
+        self.assertFalse(faqparse.extract(
+            '<meta name="robots" content="index, follow">')["noindex"])
+
+
+class Dedupe(unittest.TestCase):
+    """A question repeated on one page must not fail the run for every page."""
+
+    def test_repeated_question_kept_once(self):
+        doc = ('<li data-faq-item=""><span data-faq-question="">Same?</span>'
+               '<div data-faq-answer=""><p>First answer here, long enough.</p></div></li>'
+               '<li data-faq-item=""><span data-faq-question="">Same?</span>'
+               '<div data-faq-answer=""><p>Second answer here, long enough.</p></div></li>')
+        items = faqparse.extract(doc)["items"]
+        self.assertEqual(len(items), 2)          # parser reports what is on the page
+
+        seen, deduped = set(), []
+        for q, a in items:
+            if q not in seen:
+                seen.add(q)
+                deduped.append((q, a))
+        node = sync.faq_node("https://x/y", deduped)
+        self.assertEqual(len(node["mainEntity"]), 1)
+        self.assertEqual(sync.validate_local("/y", node), [])
+        self.assertIn("First answer",
+                      node["mainEntity"][0]["acceptedAnswer"]["text"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

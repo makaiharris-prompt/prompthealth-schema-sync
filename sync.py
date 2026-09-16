@@ -444,6 +444,16 @@ def main():
             elif res:
                 results[path] = res
 
+    # Pages marked noindex are deliberately out of search; schema cannot help
+    # them and adding it contradicts an explicit editorial decision.
+    noindexed = sorted(p for p, r in results.items() if r.get("noindex"))
+    for p_ in noindexed:
+        results.pop(p_)
+    if noindexed:
+        summary.append(f"SKIP  {len(noindexed)} noindex page(s): "
+                       + ", ".join(noindexed[:6])
+                       + (" ..." if len(noindexed) > 6 else ""))
+
     known = {f.stem for f in SNAP.glob("*.json")}
     with_faq = {p: r for p, r in results.items() if r["items"]}
 
@@ -464,7 +474,20 @@ def main():
     # 4 - build ----------------------------------------------------------
     built = {}
     for path, r in sorted(with_faq.items()):
-        built[path] = faq_node(BASE + path, r["items"])
+        # A question repeated on the page is a content bug, not a reason to
+        # freeze schema for every other page. Keep the first, report the rest.
+        seen, deduped, dupes = set(), [], []
+        for q, a in r["items"]:
+            if q in seen:
+                dupes.append(q)
+                continue
+            seen.add(q)
+            deduped.append((q, a))
+        if dupes:
+            summary.append(f"DUPE  {path}: dropped {len(dupes)} repeated "
+                           f"question(s): {dupes[0][:60]!r}"
+                           + (f" (+{len(dupes) - 1} more)" if len(dupes) > 1 else ""))
+        built[path] = faq_node(BASE + path, deduped)
         if r["lists"] == 0:
             summary.append(f"NOTE  {path}: no [data-faq-list] wrapper (items still found)")
 

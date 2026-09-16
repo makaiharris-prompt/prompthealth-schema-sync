@@ -127,8 +127,15 @@ def clean_answer(fragment, base):
     return s.strip()
 
 
+_NOINDEX = re.compile(
+    r'<meta[^>]*name\s*=\s*["\']robots["\'][^>]*content\s*=\s*["\'][^"\']*noindex'
+    r'|<meta[^>]*content\s*=\s*["\'][^"\']*noindex[^"\']*["\'][^>]*name\s*=\s*["\']robots',
+    re.I)
+
+
 def extract(doc, base="https://www.prompthealth.com"):
-    """Return {'items': [(question, answer)], 'lists': int, 'legacy': bool}."""
+    """Return {'items': [(question, answer)], 'lists': int, 'legacy': bool,
+    'noindex': bool}."""
     items = []
     for inner, _ in _find_attr_elements(doc, "data-faq-item"):
         qs = _find_attr_elements(inner, "data-faq-question")
@@ -140,6 +147,7 @@ def extract(doc, base="https://www.prompthealth.com"):
         "items": items,
         "lists": len(_find_attr_elements(doc, "data-faq-list")),
         "legacy": any(mark in doc for mark in LEGACY_MARKERS),
+        "noindex": bool(_NOINDEX.search(doc)),
     }
 
 
