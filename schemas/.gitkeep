@@ -1,0 +1,8 @@
+Snapshots of schema ACTUALLY WRITTEN to Webflow.
+
+Written only after a successful, verified --apply. A dry run never creates
+them: a snapshot for a page that was never written would make the next
+--apply believe the work was already done, which is exactly what happened
+on the first pilot run.
+
+Empty directory therefore means: nothing has been written to Webflow yet.

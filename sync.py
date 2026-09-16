@@ -33,6 +33,7 @@ SITE_ID = "663e8ac23e061e4b80b016d0"
 BASE = "https://www.prompthealth.com"
 API = "https://api.webflow.com/v2"
 BETA = "https://api.webflow.com/beta"   # schema-markup lives here, not under v2
+_UNREAD = object()                      # sentinel: read-back failed
 CUSTOM_DOMAINS = ["www.prompthealth.com", "prompthealth.com",
                   "www.promptemr.com", "promptemr.com"]
 SNAP = Path(__file__).parent / "schemas"
@@ -105,8 +106,25 @@ class Webflow:
                 return out
 
     def get_schema(self, page_id):
-        """Read a page's JSON-LD back from the API (used to verify a write landed)."""
+        """Read one page's JSON-LD back from the API."""
         return self._call("GET", f"pages/{page_id}/schema-markup", base=BETA)
+
+    def get_schema_bulk(self, page_ids):
+        """Read many pages' JSON-LD in one call; falls back to per-page GETs."""
+        out = {}
+        for i in range(0, len(page_ids), 100):
+            chunk = page_ids[i:i + 100]
+            code, d = self._call("POST",
+                                 f"sites/{SITE_ID}/pages/schema-markup/query",
+                                 {"pages": [{"id": p} for p in chunk]}, base=BETA)
+            if code == 200 and isinstance(d, dict) and "pages" in d:
+                for p in d["pages"]:
+                    out[p["id"]] = p.get("jsonLdSchema")
+            else:
+                for pid in chunk:
+                    c2, d2 = self.get_schema(pid)
+                    out[pid] = d2.get("jsonLdSchema") if c2 == 200 else _UNREAD
+        return out
 
     def write_schema(self, updates):
         """updates: {page_id: doc-or-None}.
@@ -362,6 +380,9 @@ def main():
     ap.add_argument("--probe", action="store_true", help="probe API endpoints and exit")
     ap.add_argument("--no-remote-validate", action="store_true",
                     help="skip validator.schema.org entirely")
+    ap.add_argument("--save-snapshots", action="store_true",
+                    help="dry run only: also write schemas/ (they will then "
+                         "claim state Webflow does not actually have)")
     ap.add_argument("--validate-limit", type=int, default=6,
                     help="max distinct document shapes to send to schema.org per run")
     args = ap.parse_args()
@@ -596,10 +617,16 @@ def main():
         return
 
     if not args.apply:
-        for _, (f, new, _) in changed.items():
-            f.write_text(new) if new else (f.unlink() if f.exists() else None)
-        print(f"\nDry run: wrote {len(changed)} snapshot(s) to schemas/. "
-              "Re-run with --apply to write to Webflow.")
+        # Deliberately does NOT touch schemas/. A snapshot means "this is what
+        # Webflow currently holds"; writing one for a page we never wrote would
+        # make the next --apply believe the work was already done.
+        print(f"\nDry run: {len(changed)} page(s) would be written. "
+              "Nothing changed. Re-run with --apply to write to Webflow.")
+        if args.save_snapshots:
+            for _, (f, new_txt, _) in changed.items():
+                f.write_text(new_txt) if new_txt else (f.unlink() if f.exists() else None)
+            print("(--save-snapshots: schemas/ updated for review; these now "
+                  "claim state Webflow does not have)")
         return
 
     if not wf:
@@ -628,13 +655,13 @@ def main():
     id_to_path = {pid: path for path, (_, _, _) in changed.items()
                   for pid in [pages.get(path, {}).get("id")] if pid}
     verify_fail = []
+    stored_all = wf.get_schema_bulk(list(updates))
     for pid, sent in updates.items():
         path = id_to_path.get(pid, pid)
-        code, back = wf.get_schema(pid)
-        if code != 200:
-            verify_fail.append(f"{path}: read-back returned {code}")
+        stored = stored_all.get(pid, _UNREAD)
+        if stored is _UNREAD:
+            verify_fail.append(f"{path}: could not read schema back")
             continue
-        stored = back.get("jsonLdSchema")
         if sent is None:
             if stored:
                 verify_fail.append(f"{path}: expected cleared schema, found some")
