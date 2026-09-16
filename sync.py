@@ -354,21 +354,56 @@ def main():
     if args.probe:
         if not wf:
             sys.exit("WEBFLOW_API_TOKEN not set")
-        print("GET  site      :", wf._call("GET", f"sites/{SITE_ID}")[0])
+
+        code, site = wf._call("GET", f"sites/{SITE_ID}")
+        print("GET  site      :", code)
+        if code in (401, 403):
+            sys.exit(f"\nAuth failed ({code}): {str(site)[:200]}\n"
+                     "The token is missing, invalid, or lacks access to this site.\n"
+                     "Create one at Webflow > Site settings > Apps & integrations > "
+                     "API access, with scopes: sites:read, sites:write, "
+                     "pages:read, pages:write.")
+        if code != 200:
+            sys.exit(f"Unexpected response {code}: {str(site)[:300]}")
+
         pgs = wf.pages()
         print("GET  pages     :", len(pgs), "pages")
-        pid = next(p["id"] for p in pgs if p.get("publishedPath") == "/demo"
-                   and not p["slug"].startswith("detail_"))
+        if not pgs:
+            sys.exit("No pages returned - the token likely lacks the pages:read scope.")
+
+        candidates = [p for p in pgs if p.get("publishedPath") == "/demo"
+                      and not (p.get("slug") or "").startswith("detail_")]
+        if not candidates:
+            print("NOTE: /demo not found; probing the first discoverable page instead")
+            candidates = [next(iter(discover(pgs).values()))]
+        pid = candidates[0]["id"]
+        print("             using page", pid, candidates[0].get("publishedPath"))
+
         code, d = wf._call("GET", f"pages/{pid}")
-        print("GET  page      :", code, "| jsonLdSchema present:", "jsonLdSchema" in d)
+        print("GET  page      :", code, "| jsonLdSchema in response:",
+              "jsonLdSchema" in d)
+
         code, d = wf._call("POST", f"sites/{SITE_ID}/pages/schema_markup/query",
                            {"pages": [{"id": pid}]})
-        print("POST bulk read :", code, "|", str(d)[:160])
+        print("POST bulk read :", code, "|", str(d)[:200])
+
+        print("\nRead path resolved:",
+              "bulk" if code == 200 else "per-page GET fallback")
         return
 
     # 1 - discover -------------------------------------------------------
     if wf:
-        pages = discover(wf.pages())
+        code, site_probe = wf._call("GET", f"sites/{SITE_ID}")
+        if code in (401, 403):
+            sys.exit(f"FATAL: Webflow auth failed ({code}). Check WEBFLOW_API_TOKEN "
+                     "and its scopes (sites:read, sites:write, pages:read, pages:write).")
+        if code != 200:
+            sys.exit(f"FATAL: Webflow returned {code} for the site: {str(site_probe)[:200]}")
+        all_pages = wf.pages()
+        if not all_pages:
+            sys.exit("FATAL: Webflow returned zero pages. Refusing to continue - "
+                     "an empty page list would look like every FAQ was deleted.")
+        pages = discover(all_pages)
     else:
         print("! no WEBFLOW_API_TOKEN - discovery limited to known paths", file=sys.stderr)
         pages = {p.strip(): {"id": None} for p in
