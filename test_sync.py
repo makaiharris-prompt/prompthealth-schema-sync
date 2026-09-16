@@ -276,10 +276,20 @@ class ApiLimits(unittest.TestCase):
         self.assertTrue(any("byte API limit" in e
                             for e in sync.validate_local("/x", doc)))
 
-    def test_too_many_nodes_rejected(self):
-        doc = self.base(2000)          # 2000 questions -> >5000 nodes
-        self.assertTrue(any("nodes exceeds" in e
-                            for e in sync.validate_local("/x", doc)))
+    def test_node_counter_is_correct(self):
+        """A Question contributes 2 nodes (itself + its Answer), plus 1 for the root.
+
+        In practice the 60KB limit always binds before 5000 nodes -- 2500
+        questions would be needed, and those cannot fit in 60KB -- so the node
+        check is belt-and-braces. Test the counter, not an unreachable trip.
+        """
+        self.assertEqual(sync._shape_stats(self.base(1))[1], 3)
+        self.assertEqual(sync._shape_stats(self.base(10))[1], 21)
+        self.assertEqual(sync._shape_stats(self.base(2000))[1], 4001)
+
+    def test_size_limit_binds_before_node_limit(self):
+        errs = sync.validate_local("/x", self.base(2000))
+        self.assertTrue(any("byte API limit" in e for e in errs), errs)
 
     def test_too_deep_rejected(self):
         doc = self.base(1)
