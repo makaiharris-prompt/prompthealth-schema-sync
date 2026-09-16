@@ -187,5 +187,32 @@ class Parse(unittest.TestCase):
         self.assertIn("tail", faqparse.extract(doc)["items"][0][1])
 
 
+
+
+class Shape(unittest.TestCase):
+    """Validation samples one document per shape, so shapes must be distinguishing."""
+
+    def test_bare_vs_graph(self):
+        faq = {"@type": "FAQPage", "mainEntity": []}
+        self.assertEqual(sync.shape_of(sync.merge(None, faq)), "bare:FAQPage")
+        merged = sync.merge({"@type": "SoftwareApplication", "name": "x"}, faq)
+        self.assertEqual(sync.shape_of(merged), "graph:FAQPage+SoftwareApplication")
+
+    def test_shape_ignores_content(self):
+        """Two pages with different questions must share a shape (that's the point)."""
+        a = sync.merge(None, {"@type": "FAQPage",
+                              "mainEntity": [{"@type": "Question", "name": "a"}]})
+        b = sync.merge(None, {"@type": "FAQPage",
+                              "mainEntity": [{"@type": "Question", "name": "b"},
+                                             {"@type": "Question", "name": "c"}]})
+        self.assertEqual(sync.shape_of(a), sync.shape_of(b))
+
+    def test_different_companions_differ(self):
+        faq = {"@type": "FAQPage", "mainEntity": []}
+        s1 = sync.shape_of(sync.merge({"@type": "AboutPage"}, faq))
+        s2 = sync.shape_of(sync.merge({"@type": "CollectionPage"}, faq))
+        self.assertNotEqual(s1, s2)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

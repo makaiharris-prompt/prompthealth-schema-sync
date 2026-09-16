@@ -263,6 +263,13 @@ def validate_remote(doc, retries=4):
 
 # ---------------------------------------------------------------- pipeline
 
+def shape_of(doc):
+    """Structural signature of a document: what a validator would actually test."""
+    nodes = to_nodes(doc)
+    types = "+".join(sorted(str(n.get("@type", "?")) for n in nodes))
+    return ("graph:" if "@graph" in (doc or {}) else "bare:") + types
+
+
 def slug_of(path):
     return (path.strip("/") or "home").replace("/", "-")
 
@@ -334,7 +341,10 @@ def main():
     ap.add_argument("--host", default=BASE, help="host to read FAQs from")
     ap.add_argument("--only", default="", help="comma-separated paths to restrict to")
     ap.add_argument("--probe", action="store_true", help="probe API endpoints and exit")
-    ap.add_argument("--no-remote-validate", action="store_true")
+    ap.add_argument("--no-remote-validate", action="store_true",
+                    help="skip validator.schema.org entirely")
+    ap.add_argument("--validate-limit", type=int, default=6,
+                    help="max distinct document shapes to send to schema.org per run")
     args = ap.parse_args()
 
     token = os.environ.get("WEBFLOW_API_TOKEN")
@@ -438,26 +448,46 @@ def main():
         if new.strip() != old.strip():
             changed[path] = (f, new, doc)
 
-    # 8 - remote validation, only on what changed --------------------------
-    # Unchanged docs passed schema.org when they were first written, so
-    # re-checking them every run just burns the validator's rate limit.
+    # 8 - remote validation ------------------------------------------------
+    # Only changed docs, and only one per distinct *shape*. Every page uses the
+    # same generated template, so the documents differ by strings, not structure
+    # -- validating all 31 tells you nothing that validating one of each shape
+    # doesn't, and it trips the validator's rate limit.
     if changed and not args.no_remote_validate:
+        by_shape = {}
         for path, (_, _, doc) in sorted(changed.items()):
-            if doc is None:
-                continue
+            if doc is not None:
+                by_shape.setdefault(shape_of(doc), path)
+        picked = list(by_shape.items())[:args.validate_limit]
+        skipped_shapes = len(by_shape) - len(picked)
+        rate_limited = []
+        for sig, path in picked:
+            doc = changed[path][2]
             try:
                 ne, nw, errs = validate_remote(doc)
+            except urllib.error.HTTPError as e:
+                if e.code in (429, 503):
+                    rate_limited.append(sig)
+                    continue
+                raise
             except Exception as e:                                # noqa: BLE001
                 print(f"FATAL: {path}: schema.org validator unreachable ({e}). "
                       "Refusing to write unvalidated schema.", file=sys.stderr)
                 fail = True
                 continue
             if ne:
-                print(f"FATAL: {path}: schema.org reported {ne} errors: {errs[:5]}",
-                      file=sys.stderr)
+                print(f"FATAL: {path} [{sig}]: schema.org reported {ne} errors: "
+                      f"{errs[:5]}", file=sys.stderr)
                 fail = True
-            elif nw:
-                summary.append(f"WARN  {path}: {nw} schema.org warnings")
+            else:
+                summary.append(f"VALID {path} [{sig}]"
+                               + (f" ({nw} warnings)" if nw else ""))
+        if rate_limited:
+            summary.append("WARN  schema.org rate-limited; unvalidated shapes: "
+                           + ", ".join(rate_limited) + " (retried next run)")
+        if skipped_shapes:
+            summary.append(f"NOTE  {skipped_shapes} further shape(s) above "
+                           f"--validate-limit={args.validate_limit}")
         if fail:
             sys.exit(2)
 
