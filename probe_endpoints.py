@@ -40,7 +40,17 @@ for k in d:
     if "json" in k.lower() or "schema" in k.lower() or "ld" in k.lower():
         print(f"  !! {k} = {str(d[k])[:200]}")
 
-print("\n=== candidate READ routes ===")
+print("\n=== documented beta route ===")
+code, d = call("GET", f"beta/pages/{KIOSK}/schema-markup")
+print(f"{code} GET /beta/pages/{{kiosk}}/schema-markup")
+if code == 200:
+    print("   stored:", json.dumps(d)[:300])
+code, d = call("GET", f"beta/pages/{DEMO}/schema-markup")
+print(f"{code} GET /beta/pages/{{demo}}/schema-markup  (page has no schema)")
+if code == 200:
+    print("   stored:", json.dumps(d)[:200])
+
+print("\n=== other candidate READ routes ===")
 reads = [
     ("GET",  f"v2/pages/{KIOSK}/schema_markup"),
     ("GET",  f"v2/pages/{KIOSK}/schema-markup"),

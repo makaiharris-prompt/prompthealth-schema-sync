@@ -32,6 +32,7 @@ import faqparse
 SITE_ID = "663e8ac23e061e4b80b016d0"
 BASE = "https://www.prompthealth.com"
 API = "https://api.webflow.com/v2"
+BETA = "https://api.webflow.com/beta"   # schema-markup lives here, not under v2
 CUSTOM_DOMAINS = ["www.prompthealth.com", "prompthealth.com",
                   "www.promptemr.com", "promptemr.com"]
 SNAP = Path(__file__).parent / "schemas"
@@ -41,6 +42,11 @@ UA = "prompthealth-schema-sync/1.0"
 MAX_LOST_PAGES = 3
 MAX_LOST_FRACTION = 0.20
 MIN_ANSWER_CHARS = 20
+
+# Documented limits on the schema-markup endpoint.
+MAX_SCHEMA_BYTES = 60 * 1024
+MAX_SCHEMA_DEPTH = 32
+MAX_SCHEMA_NODES = 5000
 
 
 # ---------------------------------------------------------------- http
@@ -68,10 +74,10 @@ class Webflow:
         self.token = token
         self.h = {"Authorization": f"Bearer {token}", "accept": "application/json"}
 
-    def _call(self, method, path, body=None):
+    def _call(self, method, path, body=None, base=None):
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(
-            f"{API}/{path.lstrip('/')}", data=data, method=method,
+            f"{base or API}/{path.lstrip('/')}", data=data, method=method,
             headers={**self.h, "User-Agent": UA, "content-type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
@@ -98,20 +104,22 @@ class Webflow:
             if not batch or offset >= total:
                 return out
 
+    def get_schema(self, page_id):
+        """Read a page's JSON-LD back from the API (used to verify a write landed)."""
+        return self._call("GET", f"pages/{page_id}/schema-markup", base=BETA)
+
     def write_schema(self, updates):
-        """updates: {page_id: json_string}. Bulk first, per-page PATCH as fallback."""
+        """updates: {page_id: doc-or-None}.
+
+        PUT /beta/pages/{id}/schema-markup -- a beta route, which is why nothing
+        under /v2 works. jsonLdSchema takes an object, a raw JSON string, or null
+        to clear. There is no bulk route, so this is one call per changed page.
+        """
         results = {}
-        items = list(updates.items())
-        for i in range(0, len(items), 25):
-            chunk = items[i:i + 25]
-            code, d = self._call("PATCH", f"sites/{SITE_ID}/pages/schema_markup",
-                                 {"pages": [{"id": p, "jsonLdSchema": s} for p, s in chunk]})
-            if code in (200, 202):
-                results.update({p: (code, None) for p, _ in chunk})
-                continue
-            for pid, s in chunk:                                  # fallback
-                c2, d2 = self._call("PATCH", f"pages/{pid}", {"jsonLdSchema": s})
-                results[pid] = (c2, None if c2 in (200, 202) else d2)
+        for pid, doc in updates.items():
+            code, d = self._call("PUT", f"pages/{pid}/schema-markup",
+                                 {"jsonLdSchema": doc}, base=BETA)
+            results[pid] = (code, None if code in (200, 201, 202) else d)
         return results
 
     def publish(self):
@@ -172,8 +180,27 @@ def merge(existing, node):
 
 # ---------------------------------------------------------------- validate
 
+def _shape_stats(o, d=1):
+    """(max depth, node count) for the API's documented limits."""
+    if isinstance(o, dict):
+        subs = [_shape_stats(v, d + 1) for v in o.values()]
+        return (max([x[0] for x in subs] or [d]), 1 + sum(x[1] for x in subs))
+    if isinstance(o, list):
+        subs = [_shape_stats(v, d + 1) for v in o]
+        return (max([x[0] for x in subs] or [d]), sum(x[1] for x in subs))
+    return (d, 0)
+
+
 def validate_local(path, doc):
     errs = []
+    raw = len(json.dumps(doc).encode())
+    depth, nodes = _shape_stats(doc)
+    if raw > MAX_SCHEMA_BYTES:
+        errs.append(f"{raw} bytes exceeds the {MAX_SCHEMA_BYTES} byte API limit")
+    if depth > MAX_SCHEMA_DEPTH:
+        errs.append(f"nesting depth {depth} exceeds {MAX_SCHEMA_DEPTH}")
+    if nodes > MAX_SCHEMA_NODES:
+        errs.append(f"{nodes} nodes exceeds {MAX_SCHEMA_NODES}")
     faq = next((n for n in to_nodes(doc) if n.get("@type") == "FAQPage"), None)
     if not faq:
         return ["no FAQPage node"]
@@ -554,16 +581,57 @@ def main():
         if not pid:
             summary.append(f"WARN  {path}: no page id, skipped")
             continue
-        updates[pid] = json.dumps(doc, ensure_ascii=False) if doc else None
+        updates[pid] = doc          # object or None; the API accepts both
 
     res = wf.write_schema(updates)
-    bad = {p: v for p, v in res.items() if v[0] not in (200, 202)}
-    for path, (f, new, _) in changed.items():
-        f.write_text(new) if new else (f.unlink() if f.exists() else None)
+    bad = {p: v for p, v in res.items() if v[0] not in (200, 201, 202)}
     print(f"\nWrote {len(updates) - len(bad)}/{len(updates)} pages.")
     if bad:
         print("FAILED writes:", json.dumps(bad, indent=2)[:1500], file=sys.stderr)
         sys.exit(2)
+
+    # Read back what the API actually stored. A write that reports 200 but stores
+    # something else would otherwise go unnoticed until someone inspected the page.
+    id_to_path = {pid: path for path, (_, _, _) in changed.items()
+                  for pid in [pages.get(path, {}).get("id")] if pid}
+    verify_fail = []
+    for pid, sent in updates.items():
+        path = id_to_path.get(pid, pid)
+        code, back = wf.get_schema(pid)
+        if code != 200:
+            verify_fail.append(f"{path}: read-back returned {code}")
+            continue
+        stored = back.get("jsonLdSchema")
+        if sent is None:
+            if stored:
+                verify_fail.append(f"{path}: expected cleared schema, found some")
+            continue
+        got = to_nodes(stored)
+        want = to_nodes(sent)
+        got_types = sorted(str(n.get("@type")) for n in got)
+        want_types = sorted(str(n.get("@type")) for n in want)
+        if got_types != want_types:
+            verify_fail.append(f"{path}: stored {got_types}, sent {want_types}")
+            continue
+        gq = next((len(n.get("mainEntity", [])) for n in got
+                   if n.get("@type") == "FAQPage"), 0)
+        wq = next((len(n.get("mainEntity", [])) for n in want
+                   if n.get("@type") == "FAQPage"), 0)
+        if gq != wq:
+            verify_fail.append(f"{path}: stored {gq} questions, sent {wq}")
+
+    if verify_fail:
+        print("\nFATAL: written schema did not read back as sent:", file=sys.stderr)
+        for v in verify_fail:
+            print("  ", v, file=sys.stderr)
+        print("Not publishing. Investigate before re-running.", file=sys.stderr)
+        sys.exit(2)
+    print(f"Verified {len(updates)} page(s) read back as sent.")
+
+    # Only record snapshots once the write is confirmed, so a failed run
+    # retries the same pages next time instead of thinking it succeeded.
+    for path, (f, new, _) in changed.items():
+        f.write_text(new) if new else (f.unlink() if f.exists() else None)
 
     if not args.publish:
         print("Staged only (--publish not set). Schema goes live on your next publish.")

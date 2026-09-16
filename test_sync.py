@@ -254,5 +254,43 @@ class ExistingJsonLd(unittest.TestCase):
         self.assertFalse(faqparse.existing_jsonld(doc)[1])
 
 
+class ApiLimits(unittest.TestCase):
+    """The schema-markup endpoint documents 60KB / depth 32 / 5000 nodes.
+    Catch violations locally rather than as an opaque API rejection."""
+
+    def base(self, questions):
+        return {"@context": "https://schema.org", "@type": "FAQPage",
+                "mainEntity": [{"@type": "Question", "name": f"Q{i}",
+                                "acceptedAnswer": {"@type": "Answer", "text": "A" * 30}}
+                               for i in range(questions)]}
+
+    def test_real_pages_are_well_inside_limits(self):
+        import pathlib
+        for f in pathlib.Path("schemas").glob("*.json"):
+            doc = json.load(open(f))
+            self.assertEqual(sync.validate_local(f.stem, doc), [], f.stem)
+
+    def test_oversize_rejected(self):
+        doc = self.base(2)
+        doc["mainEntity"][0]["acceptedAnswer"]["text"] = "x" * (61 * 1024)
+        self.assertTrue(any("byte API limit" in e
+                            for e in sync.validate_local("/x", doc)))
+
+    def test_too_many_nodes_rejected(self):
+        doc = self.base(2000)          # 2000 questions -> >5000 nodes
+        self.assertTrue(any("nodes exceeds" in e
+                            for e in sync.validate_local("/x", doc)))
+
+    def test_too_deep_rejected(self):
+        doc = self.base(1)
+        deep = cur = {}
+        for _ in range(40):
+            cur["x"] = {}
+            cur = cur["x"]
+        doc["mainEntity"][0]["deep"] = deep
+        self.assertTrue(any("nesting depth" in e
+                            for e in sync.validate_local("/x", doc)))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
