@@ -349,6 +349,20 @@ class NoIndex(unittest.TestCase):
 class Dedupe(unittest.TestCase):
     """A question repeated on one page must not fail the run for every page."""
 
+    def test_repeated_heading_drops_every_copy(self):
+        """'Ask <Competitor>' repeats as a label; keeping one ships nonsense."""
+        from collections import Counter
+        items = [("Ask WebPT", "How is your AI trained?"),
+                 ("Ask WebPT", "How is support structured?"),
+                 ("Real question?", "A genuine answer, long enough to pass.")]
+        counts = Counter(q for q, _ in items)
+        repeated = {q for q, c in counts.items() if c > 1}
+        kept = [(q, a) for q, a in items if q not in repeated]
+        self.assertEqual([q for q, _ in kept], ["Real question?"])
+        node = sync.faq_node("https://x/y", kept)
+        self.assertEqual(len(node["mainEntity"]), 1)
+        self.assertEqual(sync.validate_local("/y", node), [])
+
     def test_repeated_question_kept_once(self):
         doc = ('<li data-faq-item=""><span data-faq-question="">Same?</span>'
                '<div data-faq-answer=""><p>First answer here, long enough.</p></div></li>'

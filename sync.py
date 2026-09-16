@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures as cf
+from collections import Counter
 import json
 import os
 import re
@@ -495,20 +496,26 @@ def main():
     # 4 - build ----------------------------------------------------------
     built = {}
     for path, r in sorted(with_faq.items()):
-        # A question repeated on the page is a content bug, not a reason to
-        # freeze schema for every other page. Keep the first, report the rest.
-        seen, deduped, dupes = set(), [], []
-        for q, a in r["items"]:
-            if q in seen:
-                dupes.append(q)
-                continue
-            seen.add(q)
-            deduped.append((q, a))
-        if dupes:
-            summary.append(f"DUPE  {path}: dropped {len(dupes)} repeated "
-                           f"question(s): {dupes[0][:60]!r}"
-                           + (f" (+{len(dupes) - 1} more)" if len(dupes) > 1 else ""))
-        built[path] = faq_node(BASE + path, deduped)
+        # A question string that repeats on a page is almost always a section
+        # label reused as a heading, not a question -- on /compare/* the label
+        # is "Ask <Competitor>" and the "answer" is a question to put to that
+        # competitor. Publishing that would attribute competitor-directed
+        # questions to Prompt as answers. Drop every copy, not just the extras:
+        # keeping the first would ship one nonsense pair per page, and there is
+        # no principled way to choose which copy is the real one.
+        counts = Counter(q for q, _ in r["items"])
+        repeated = {q for q, c in counts.items() if c > 1}
+        kept = [(q, a) for q, a in r["items"] if q not in repeated]
+        if repeated:
+            example = sorted(repeated)[0]
+            summary.append(
+                f"DUPE  {path}: dropped {sum(counts[q] for q in repeated)} item(s) "
+                f"under {len(repeated)} repeated heading(s), e.g. {example[:50]!r} "
+                "- repeated headings are labels, not questions")
+        if not kept:
+            summary.append(f"SKIP  {path}: every question repeated; nothing to publish")
+            continue
+        built[path] = faq_node(BASE + path, kept)
         if r["lists"] == 0:
             summary.append(f"NOTE  {path}: no [data-faq-list] wrapper (items still found)")
 
