@@ -141,3 +141,35 @@ def extract(doc, base="https://www.prompthealth.com"):
         "lists": len(_find_attr_elements(doc, "data-faq-list")),
         "legacy": any(mark in doc for mark in LEGACY_MARKERS),
     }
+
+
+_LDJSON = re.compile(
+    r'<script[^>]*type\s*=\s*["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+    re.S | re.I)
+
+
+def existing_jsonld(doc):
+    """Read the JSON-LD already served on the page.
+
+    Returns (nodes, ok). ok=False means a block was present but unparseable --
+    the caller must NOT write, or it would clobber schema it cannot see.
+
+    The served HTML is the authoritative record of what Webflow currently
+    renders, so this needs no API endpoint and can be verified by eye.
+    """
+    blocks = _LDJSON.findall(doc)
+    if not blocks:
+        return [], True
+    nodes = []
+    for b in blocks:
+        try:
+            parsed = __import__("json").loads(b.strip())
+        except Exception:                                         # noqa: BLE001
+            return [], False
+        if isinstance(parsed, dict) and "@graph" in parsed:
+            nodes += list(parsed["@graph"])
+        elif isinstance(parsed, list):
+            nodes += parsed
+        elif isinstance(parsed, dict):
+            nodes.append(parsed)
+    return nodes, True

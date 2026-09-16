@@ -78,9 +78,19 @@ to production. An SEO automation should never be able to ship someone's half-fin
 ### Existing schema is never clobbered
 
 Several pages carry hand-written JSON-LD (`SoftwareApplication`, `AboutPage`, `WebPage`,
-`CollectionPage`). The writer reads the current field, replaces **only** the `FAQPage` member,
-and copies every other node through untouched, emitting `@graph` when more than one node
-results. Merging is idempotent, and removing the FAQ restores the original document exactly.
+`CollectionPage`). The writer replaces **only** the `FAQPage` member and copies every other
+node through untouched, emitting `@graph` when more than one node results. Merging is
+idempotent, and removing the FAQ restores the original document exactly.
+
+**Existing schema is read from the page's own served HTML, not from the API.** That is the
+authoritative record of what Webflow renders today, it needs no endpoint, and you can check
+it yourself with `curl`. This matters: the Data API has no route that returns the field
+(`GET /v2/pages/{id}` omits it, and there is no bulk schema route), so an API-based read
+silently returned "no existing schema" for every page -- which would have overwritten all of
+the hand-written markup on the first run.
+
+If a page serves JSON-LD that will not parse, that page is **skipped entirely** rather than
+overwritten. Schema we cannot read is schema we must not replace.
 
 ## Validation
 

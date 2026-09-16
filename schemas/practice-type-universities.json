@@ -1,56 +1,157 @@
 {
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "@id": "https://www.prompthealth.com/practice-type/universities#faq",
-  "url": "https://www.prompthealth.com/practice-type/universities",
-  "mainEntity": [
+  "@graph": [
     {
-      "@type": "Question",
-      "name": "Why is Prompt offering this to universities?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Prompt is committed to improving the rehab industry by equipping students with cutting-edge EMR tools before they enter the workforce. By making Prompt accessible during training, we help future clinicians build confidence and competence, which ultimately improves patient care."
+      "@type": "WebPage",
+      "name": "Prompt for Universities - Free EMR for Clinical Education",
+      "description": "Free EMR for universities offering hands-on experience with AI-powered clinical documentation tools for PT, OT, SLP, and allied health programs.",
+      "url": "/practice-type/universities",
+      "inLanguage": "en",
+      "about": {
+        "@type": "SoftwareApplication",
+        "name": "Prompt EMR for Universities",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "Free for university pro bono clinics and academic curriculum with one-time onboarding fee"
+        },
+        "featureList": [
+          "Free student and faculty access",
+          "EMR and AI experience for PT, OT, AT, and SLP programs",
+          "In-platform feedback and real-time note reviews",
+          "CPT coding, SOAP notes, HEP tools, scheduling",
+          "Clinical placement network connection",
+          "Career matching tools",
+          "On-demand training and real-time support"
+        ],
+        "audience": {
+          "@type": "EducationalAudience",
+          "educationalRole": "student"
+        },
+        "provider": {
+          "@type": "Organization",
+          "name": "Prompt Therapy Solutions",
+          "url": "/",
+          "sameAs": [
+            "https://www.facebook.com/promptemr",
+            "https://www.instagram.com/promptemr/",
+            "https://www.linkedin.com/company/promptemr/",
+            "https://www.tiktok.com/@prompt_health",
+            "https://www.youtube.com/@prompt_health"
+          ]
+        }
+      },
+      "mainEntity": {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Why is Prompt offering this to universities?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Prompt is committed to improving the rehab industry by equipping students with cutting-edge EMR tools before they enter the workforce. By making Prompt accessible during training, we help future clinicians build confidence and competence—ultimately improving patient care."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What programs is Prompt built for?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Prompt is built for PT, OT, SLP, Chiropractic, and Athletic Training programs, and is also adaptable for other allied health disciplines."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How long does it take to get started?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Most programs are fully onboarded within 2–4 weeks, with step-by-step guidance and dedicated support from our customer success team."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a cost?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Prompt's technology services are complimentary for use in pro bono clinics and academic curriculum. This includes unlimited access for faculty, students, and multidisciplinary programs. A one-time onboarding fee covers setup, training, and support from your dedicated customer success manager."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can we place students in Prompt-enabled clinics?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Absolutely! Prompt's placement management platform partner connects your program with thousands of high-quality, mentorship-driven clinics nationwide."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does AI in Prompt actually do?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Prompt's AI tools help students streamline documentation, improve accuracy, and enhance compliance—mirroring modern workflows used in leading clinics. The AI is fully configurable and can be turned off or introduced at the appropriate stage in a student's curriculum, providing the right exposure at the right time for real-world readiness."
+            }
+          }
+        ]
       }
     },
     {
-      "@type": "Question",
-      "name": "What programs is Prompt built for?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Prompt is built for PT, OT, SLP, Chiropractic, and Athletic Training programs, and is also adaptable for other allied health disciplines."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How long does it take to get started?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Most programs are fully onboarded within 4-6 weeks, with step-by-step guidance and dedicated support from our customer success team."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Is there a cost?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Prompt’s technology services are complimentary for use in pro bono clinics and academic curriculum. This includes unlimited access for faculty, students, and multidisciplinary programs. A one-time onboarding fee covers setup, training, and support from your dedicated customer success manager."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Can we place students in Prompt-enabled clinics?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Absolutely! Prompt’s placement management platform partner connects your program with thousands of high-quality, mentorship-driven clinics nationwide."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What does AI in Prompt actually do?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Prompt’s AI tools help students streamline documentation, improve accuracy, and enhance compliance, mirroring modern workflows used in leading clinics."
-      }
+      "@type": "FAQPage",
+      "@id": "https://www.prompthealth.com/practice-type/universities#faq",
+      "url": "https://www.prompthealth.com/practice-type/universities",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why is Prompt offering this to universities?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Prompt is committed to improving the rehab industry by equipping students with cutting-edge EMR tools before they enter the workforce. By making Prompt accessible during training, we help future clinicians build confidence and competence, which ultimately improves patient care."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What programs is Prompt built for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Prompt is built for PT, OT, SLP, Chiropractic, and Athletic Training programs, and is also adaptable for other allied health disciplines."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How long does it take to get started?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Most programs are fully onboarded within 4-6 weeks, with step-by-step guidance and dedicated support from our customer success team."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there a cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Prompt’s technology services are complimentary for use in pro bono clinics and academic curriculum. This includes unlimited access for faculty, students, and multidisciplinary programs. A one-time onboarding fee covers setup, training, and support from your dedicated customer success manager."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can we place students in Prompt-enabled clinics?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely! Prompt’s placement management platform partner connects your program with thousands of high-quality, mentorship-driven clinics nationwide."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does AI in Prompt actually do?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Prompt’s AI tools help students streamline documentation, improve accuracy, and enhance compliance, mirroring modern workflows used in leading clinics."
+          }
+        }
+      ]
     }
   ]
 }

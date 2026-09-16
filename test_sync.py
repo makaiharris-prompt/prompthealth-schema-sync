@@ -214,5 +214,45 @@ class Shape(unittest.TestCase):
         self.assertNotEqual(s1, s2)
 
 
+class ExistingJsonLd(unittest.TestCase):
+    """Existing schema is read from the served HTML, so this guard is load-bearing:
+    a page whose JSON-LD we cannot parse must never be overwritten."""
+
+    def wrap(self, payload):
+        return ('<html><head><script type="application/ld+json">' + payload
+                + "</script></head><body></body></html>")
+
+    def test_no_schema(self):
+        self.assertEqual(faqparse.existing_jsonld("<html></html>"), ([], True))
+
+    def test_single_node(self):
+        nodes, ok = faqparse.existing_jsonld(self.wrap('{"@type":"WebPage","name":"x"}'))
+        self.assertTrue(ok)
+        self.assertEqual(nodes, [{"@type": "WebPage", "name": "x"}])
+
+    def test_graph_is_flattened(self):
+        nodes, ok = faqparse.existing_jsonld(
+            self.wrap('{"@graph":[{"@type":"A"},{"@type":"B"}]}'))
+        self.assertTrue(ok)
+        self.assertEqual([n["@type"] for n in nodes], ["A", "B"])
+
+    def test_multiple_blocks_combine(self):
+        doc = self.wrap('{"@type":"A"}') + self.wrap('{"@type":"B"}')
+        nodes, ok = faqparse.existing_jsonld(doc)
+        self.assertTrue(ok)
+        self.assertEqual(len(nodes), 2)
+
+    def test_unparseable_reports_not_ok(self):
+        """Webflow CMS binding tokens are not valid JSON - must refuse, not ignore."""
+        nodes, ok = faqparse.existing_jsonld(
+            self.wrap('{"headline":"{{wf {&quot;path&quot;:&quot;t&quot;\\} }}"}'))
+        self.assertFalse(ok)
+        self.assertEqual(nodes, [])
+
+    def test_unparseable_beats_valid_block(self):
+        doc = self.wrap('{"@type":"A"}') + self.wrap("{not json}")
+        self.assertFalse(faqparse.existing_jsonld(doc)[1])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

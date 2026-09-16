@@ -98,23 +98,6 @@ class Webflow:
             if not batch or offset >= total:
                 return out
 
-    def read_schema(self, page_ids):
-        """Bulk-read JSON-LD. Falls back to per-page GET if the bulk route is absent."""
-        got, missing = {}, []
-        for i in range(0, len(page_ids), 100):
-            chunk = page_ids[i:i + 100]
-            code, d = self._call("POST", f"sites/{SITE_ID}/pages/schema_markup/query",
-                                 {"pages": [{"id": p} for p in chunk]})
-            if code == 200 and "pages" in d:
-                for p in d["pages"]:
-                    got[p["id"]] = (p.get("jsonLdSchema"), p.get("rawJsonLdSchema"))
-            else:
-                missing += chunk
-        for pid in missing:
-            code, d = self._call("GET", f"pages/{pid}")
-            got[pid] = (d.get("jsonLdSchema"), d.get("rawJsonLdSchema")) if code == 200 else (None, None)
-        return got
-
     def write_schema(self, updates):
         """updates: {page_id: json_string}. Bulk first, per-page PATCH as fallback."""
         results = {}
@@ -297,7 +280,10 @@ def fetch_page(path, host):
         return path, None, f"fetch failed: {e}"
     if code != 200:
         return path, None, f"HTTP {code}"
-    return path, faqparse.extract(body.decode("utf-8", "replace"), BASE), None
+    doc = body.decode("utf-8", "replace")
+    res = faqparse.extract(doc, BASE)
+    res["existing"], res["existing_ok"] = faqparse.existing_jsonld(doc)
+    return path, res, None
 
 
 def assess(results, known):
@@ -446,21 +432,30 @@ def main():
             summary.append(f"NOTE  {path}: no [data-faq-list] wrapper (items still found)")
 
     # 5 - merge ----------------------------------------------------------
-    existing = {}
-    if wf:
-        ids = [pages[p]["id"] for p in list(built) + lost if pages.get(p, {}).get("id")]
-        raw = wf.read_schema(ids)
-        for path in list(built) + lost:
-            pid = pages.get(path, {}).get("id")
-            if pid and pid in raw:
-                obj, rawstr = raw[pid]
-                existing[path] = obj if obj is not None else rawstr
-
-    final = {}
+    # Existing schema comes from the page's own served HTML, not the API: it is
+    # the authoritative record of what Webflow renders today, it needs no
+    # endpoint, and it can be checked by eye with curl. A page whose JSON-LD we
+    # cannot parse is skipped entirely rather than overwritten.
+    final, opaque = {}, []
     for path, node in built.items():
-        final[path] = merge(existing.get(path), node)
+        r = results[path]
+        if not r.get("existing_ok", True):
+            opaque.append(path)
+            continue
+        final[path] = merge(
+            {"@context": "https://schema.org", "@graph": r["existing"]}
+            if r["existing"] else None, node)
     for path in lost:
-        final[path] = merge(existing.get(path), None)
+        r = results.get(path, {})
+        if not r.get("existing_ok", True):
+            opaque.append(path)
+            continue
+        final[path] = merge(
+            {"@context": "https://schema.org", "@graph": r["existing"]}
+            if r.get("existing") else None, None)
+    for path in opaque:
+        summary.append(f"SKIP  {path}: page serves JSON-LD that will not parse; "
+                       "refusing to overwrite schema it cannot read")
 
     # 6 - local validation (cheap, so everything gets it) ------------------
     for path, doc in sorted(final.items()):

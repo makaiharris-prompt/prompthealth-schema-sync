@@ -1,40 +1,191 @@
 {
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "@id": "https://www.prompthealth.com/products/emr#faq",
-  "url": "https://www.prompthealth.com/products/emr",
-  "mainEntity": [
+  "@graph": [
     {
-      "@type": "Question",
-      "name": "Is Prompt Health's EMR software fully HIPAA compliant?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes. Prompt Health is fully HIPAA compliant, and patient data is protected across all workflows, roles, and integrations within the platform."
-      }
+      "@type": "SoftwareApplication",
+      "name": "Prompt EMR",
+      "url": "/products/emr",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web",
+      "description": "Prompt connects care, billing, and business intelligence with unmatched support so your practice runs smoother and earns more.",
+      "inLanguage": "en",
+      "offers": {
+        "@type": "Offer",
+        "availability": "https://schema.org/InStock",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Smart Scheduling & Retention",
+        "AI-Powered Clinical Workflow",
+        "Automated Billing",
+        "Reporting & Insights",
+        "Performance Dashboard",
+        "Patient Management",
+        "Documentation",
+        "Billing Management",
+        "AI Intake",
+        "Smart Templates",
+        "Clearinghouse Integration"
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "100",
+        "bestRating": "5"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "Prompt Therapy Solutions",
+        "url": "https://www.promptemr.com",
+        "sameAs": [
+          "https://www.facebook.com/promptemr",
+          "https://www.instagram.com/promptemr/",
+          "https://www.linkedin.com/company/promptemr/",
+          "https://www.tiktok.com/@prompt_health",
+          "https://www.youtube.com/@prompt-health"
+        ]
+      },
+      "audience": [
+        {
+          "@type": "Audience",
+          "audienceType": "Physical Therapists"
+        },
+        {
+          "@type": "Audience",
+          "audienceType": "Occupational Therapists"
+        },
+        {
+          "@type": "Audience",
+          "audienceType": "Speech Therapists"
+        },
+        {
+          "@type": "Audience",
+          "audienceType": "Chiropractors"
+        },
+        {
+          "@type": "Audience",
+          "audienceType": "Pediatric Therapists"
+        }
+      ],
+      "review": [
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Josh Funk",
+            "jobTitle": "Owner",
+            "worksFor": {
+              "@type": "Organization",
+              "name": "Rehab 2 Perform"
+            }
+          },
+          "reviewBody": "It's one thing to have technology and to have all these bells and whistles, but it's a whole other thing to have a team that's fully invested in your practice's success."
+        },
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Thomas Kirby",
+            "jobTitle": "Owner",
+            "worksFor": {
+              "@type": "Organization",
+              "name": "FYZICAL Petoskey"
+            }
+          },
+          "reviewBody": "It's just such an amazing program. I'm surprised you guys aren't the only EMR out there at this point."
+        },
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Amanda Brewer",
+            "jobTitle": "Owner",
+            "worksFor": {
+              "@type": "Organization",
+              "name": "Brewer Physical Therapy"
+            }
+          },
+          "reviewBody": "If you want to save your company and your employees time and money, then you'll switch to Prompt. The software is incredibly efficient and accurate."
+        },
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Sterling Carter",
+            "jobTitle": "Owner",
+            "worksFor": {
+              "@type": "Organization",
+              "name": "Sterling PT & Wellness"
+            }
+          },
+          "reviewBody": "Prompt is a great opportunity for you to really learn how to run your practice better and help your clinicians to do their job a little bit better."
+        },
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Nick Weber",
+            "jobTitle": "Owner",
+            "worksFor": {
+              "@type": "Organization",
+              "name": "Team Rehabilitation"
+            }
+          },
+          "reviewBody": "The biggest reason why we're on Prompt is it's a true partnership. We have a good back and forth about what's important to the business."
+        },
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Alaina Marino",
+            "jobTitle": "Owner",
+            "worksFor": {
+              "@type": "Organization",
+              "name": "Marino Physiotherapy"
+            }
+          },
+          "reviewBody": "My PTs love it because they're going home on time to spend time with their families, and they can actually spend the time with the patient, not the time with the computer."
+        }
+      ]
     },
     {
-      "@type": "Question",
-      "name": "How difficult is it to switch EMR systems?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Prompt's onboarding team manages most of the migration for you. Your role is to pull a set of reports from your current EMR and then Prompt handles the transfer from there. Clinics stay operational through the transition, and many teams choose to schedule below full capacity for the first few days after go-live, leaving room to work out questions early."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Is everything included in one monthly payment?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Largely, yes. Prompt uses transparent, flat-rate per-provider pricing, and there are no hidden fees for essentials like reminders, digital intake, HEP delivery, or reporting. Home exercise programs (HEP) and the other essentials are included in your plan, not priced as add-ons. Some products and services sit outside the core plan, so <a href=\"https://www.prompthealth.com/demo\">book a demo</a> for pricing tailored to your practice."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How does the onboarding process work?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Your dedicated onboarding team assists with setup, training, and data migration, timed around your go-live date so your clinic stays operational from day one. You get role-specific training sessions, video tutorials, and an ongoing success manager to get every role up to speed fast. The transition also involves a clearinghouse transfer with EDI and ERA enrollments, plus a secure data import of the data you provide from your current EMR."
-      }
+      "@type": "FAQPage",
+      "@id": "https://www.prompthealth.com/products/emr#faq",
+      "url": "https://www.prompthealth.com/products/emr",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is Prompt Health's EMR software fully HIPAA compliant?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Prompt Health is fully HIPAA compliant, and patient data is protected across all workflows, roles, and integrations within the platform."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How difficult is it to switch EMR systems?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Prompt's onboarding team manages most of the migration for you. Your role is to pull a set of reports from your current EMR and then Prompt handles the transfer from there. Clinics stay operational through the transition, and many teams choose to schedule below full capacity for the first few days after go-live, leaving room to work out questions early."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is everything included in one monthly payment?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Largely, yes. Prompt uses transparent, flat-rate per-provider pricing, and there are no hidden fees for essentials like reminders, digital intake, HEP delivery, or reporting. Home exercise programs (HEP) and the other essentials are included in your plan, not priced as add-ons. Some products and services sit outside the core plan, so <a href=\"https://www.prompthealth.com/demo\">book a demo</a> for pricing tailored to your practice."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the onboarding process work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Your dedicated onboarding team assists with setup, training, and data migration, timed around your go-live date so your clinic stays operational from day one. You get role-specific training sessions, video tutorials, and an ongoing success manager to get every role up to speed fast. The transition also involves a clearinghouse transfer with EDI and ERA enrollments, plus a secure data import of the data you provide from your current EMR."
+          }
+        }
+      ]
     }
   ]
 }
