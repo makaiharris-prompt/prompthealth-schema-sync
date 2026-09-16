@@ -19,49 +19,74 @@ QA = [("Is this a question?", "This is an answer long enough to pass the check."
 class Assess(unittest.TestCase):
     def test_quiet_day_is_quiet(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
-        self.assertEqual(sync.assess(res, KNOWN), ([], [], None))
+        self.assertEqual(sync.assess(res, KNOWN), ([], [], [], None))
 
     def test_attributes_stripped_fails_on_first_page(self):
         """One page with legacy markup but no attributes is enough to stop everything."""
         res = {f"/p{i}": page(QA) for i in range(31)}
         res["/p0"] = page([], legacy=True)
-        broken, lost, fatal = sync.assess(res, KNOWN)
+        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
         self.assertEqual(broken, ["/p0"])
         self.assertIn("data-faq-*", fatal)
 
     def test_single_genuine_removal_allowed(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
         res["/p0"] = page([], legacy=False)
-        broken, lost, fatal = sync.assess(res, KNOWN)
+        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
         self.assertEqual((broken, lost, fatal), ([], ["/p0"], None))
 
     def test_three_removals_allowed(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
         for i in range(3):
             res[f"/p{i}"] = page([])
-        self.assertIsNone(sync.assess(res, KNOWN)[2])
+        self.assertIsNone(sync.assess(res, KNOWN)[3])
 
     def test_four_removals_aborts(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
         for i in range(4):
             res[f"/p{i}"] = page([])
-        self.assertIn("lost their FAQ section", sync.assess(res, KNOWN)[2])
+        self.assertIn("lost their FAQ section", sync.assess(res, KNOWN)[3])
 
     def test_mass_loss_aborts(self):
         res = {f"/p{i}": page([]) for i in range(31)}
-        self.assertIsNotNone(sync.assess(res, KNOWN)[2])
+        self.assertIsNotNone(sync.assess(res, KNOWN)[3])
 
     def test_unknown_page_without_faq_is_not_a_loss(self):
         """A page that never had FAQs isn't a deletion just because it has none."""
         res = {"/brand-new": page([])}
-        self.assertEqual(sync.assess(res, KNOWN), ([], [], None))
+        self.assertEqual(sync.assess(res, KNOWN), ([], [], [], None))
 
     def test_broken_beats_volume_check(self):
         """Stripped attributes are reported as breakage, not as mass deletion."""
         res = {f"/p{i}": page([], legacy=True) for i in range(31)}
-        broken, lost, fatal = sync.assess(res, KNOWN)
+        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
         self.assertEqual(len(broken), 31)
         self.assertIn("legacy accordion markup", fatal)
+
+
+class Unmigrated(unittest.TestCase):
+    """A page on an older component that never had attributes must not block
+    the pages that work -- otherwise one un-migrated page freezes all schema."""
+
+    def test_never_seen_legacy_page_is_reported_not_fatal(self):
+        res = {f"/p{i}": page(QA) for i in range(31)}
+        res["/systems4pt-migration"] = page([], legacy=True)
+        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
+        self.assertIsNone(fatal)
+        self.assertEqual(unmig, ["/systems4pt-migration"])
+        self.assertEqual(broken, [])
+
+    def test_previously_working_page_losing_attrs_is_still_fatal(self):
+        res = {f"/p{i}": page(QA) for i in range(31)}
+        res["/p0"] = page([], legacy=True)          # /p0 is in KNOWN
+        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
+        self.assertEqual(broken, ["/p0"])
+        self.assertIsNotNone(fatal)
+
+    def test_many_unmigrated_pages_never_block(self):
+        res = {f"/legacy{i}": page([], legacy=True) for i in range(20)}
+        res.update({f"/p{i}": page(QA) for i in range(31)})
+        self.assertIsNone(sync.assess(res, KNOWN)[3])
 
 
 class Merge(unittest.TestCase):

@@ -319,31 +319,37 @@ def assess(results, known):
     `results` is {path: extract_result} for pages that fetched successfully.
     `known`   is the set of slugs we had schema for last run.
 
-    broken -> attributes stripped from the component; never legitimate
-    lost   -> FAQ section genuinely removed
+    broken     -> a page that HAD schema lost its attributes; never legitimate
+    lost       -> FAQ section genuinely removed
+    unmigrated -> FAQs on an older component, never had attributes; report only
     """
-    broken, lost = [], []
+    broken, lost, unmigrated = [], [], []
     for path, r in sorted(results.items()):
         if r["items"]:
             continue
         if r["legacy"]:
-            broken.append(path)
+            # Legacy markup and no attributes means one of two very different
+            # things. If we produced schema for this page before, the component
+            # lost its attributes -- stop everything. If we never have, it is
+            # simply a page still on an older component: report it, but do not
+            # let it block the pages that do work.
+            (broken if slug_of(path) in known else unmigrated).append(path)
         elif slug_of(path) in known:
             lost.append(path)
 
     if broken:
-        return broken, lost, (
+        return broken, lost, unmigrated, (
             "FAQ attributes missing but legacy accordion markup still present on: "
             + ", ".join(broken)
             + ". The Webflow component likely lost its data-faq-* attributes.")
 
     if lost and (len(lost) > MAX_LOST_PAGES or
                  (known and len(lost) / len(known) > MAX_LOST_FRACTION)):
-        return broken, lost, (
+        return broken, lost, unmigrated, (
             f"{len(lost)} pages lost their FAQ section in one run "
             f"({', '.join(lost)}). Likely a publish or fetch anomaly.")
 
-    return broken, lost, None
+    return broken, lost, unmigrated, None
 
 
 def main():
@@ -446,10 +452,14 @@ def main():
     for path, err in fetch_errors.items():
         summary.append(f"SKIP  {path}: {err} (existing schema left as-is)")
 
-    broken, lost, fatal = assess(results, known)
+    broken, lost, unmigrated, fatal = assess(results, known)
     if fatal:
         print(f"FATAL: {fatal} Refusing to write.", file=sys.stderr)
         sys.exit(2)
+    for path in unmigrated:
+        summary.append(f"TODO  {path}: has FAQs on an older component with no "
+                       "data-faq-* attributes - add them in Webflow to include "
+                       "this page")
 
     # 4 - build ----------------------------------------------------------
     built = {}
