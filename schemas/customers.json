@@ -1,0 +1,48 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/customers#faq",
+  "url": "https://www.prompthealth.com/customers",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Do you have references I can speak to, especially in my specialty?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, we'd be glad to connect you with a practice similar to yours so you can hear directly from someone who's already been through the switch, just <a href=\"https://www.prompthealth.com/demo\">book a demo</a> and ask for a reference call. You can also browse our customer stories and filter by specialty (physical therapy, occupational therapy, speech, pediatric, and chiropractic) to find practices like yours."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do you have testimonials specifically about the billing side?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We do. Several of our customer stories focus specifically on billing and collections results, and you can filter the library by the Billing and <a href=\"https://www.prompthealth.com/products/rcm\">RCM Services</a> solutions to see more. If you'd like to hear it firsthand, just ask for a billing-focused reference during your demo and we'll set it up."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I contact a reference in my area / similar practice size?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, we're happy to connect you with a practice similar to yours, just <a href=\"https://www.prompthealth.com/demo\">book a demo</a> and ask for a reference call. You can also browse our customer stories library, which you can filter by location (by state) and by practice size (from 1–9 clinicians up to 200+), so it's easy to find a match close to your size and region."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What results have other practices seen after switching?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Results vary by practice, but the stories we hear most often are gains in collections, revenue, documentation time, and capacity. What tends to drive those wins is consistent: our customers are working in fewer disconnected systems, doing less manual rework, and getting much better visibility into how their practice is performing. We're happy to connect you with a practice similar to yours so you can hear how it played out for them firsthand."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Have any large practices with big Accounts Receivable used Prompt successfully?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Absolutely. One example we point to often is <a href=\"https://www.prompthealth.com/customers/arete-health-rcm\">Arete Health</a>, a 13-location, 40+ clinician practice that moved to our full-service RCM and increased collections by over 200%. On the RCM side, we're seeing outcomes like a 97% clean claim rate and a 99.85% net collection rate, with our team managing every step of billing for you, from claims to payment posting and AR follow-up. If it'd help, just ask for an enterprise or RCM reference during your <a href=\"https://www.prompthealth.com/demo\">demo</a> and we'll connect you with a practice that's been in your shoes."
+      }
+    }
+  ]
+}

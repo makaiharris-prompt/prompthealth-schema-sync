@@ -1,0 +1,56 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/practice-type/universities#faq",
+  "url": "https://www.prompthealth.com/practice-type/universities",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why is Prompt offering this to universities?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Prompt is committed to improving the rehab industry by equipping students with cutting-edge EMR tools before they enter the workforce. By making Prompt accessible during training, we help future clinicians build confidence and competence, which ultimately improves patient care."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What programs is Prompt built for?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Prompt is built for PT, OT, SLP, Chiropractic, and Athletic Training programs, and is also adaptable for other allied health disciplines."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does it take to get started?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most programs are fully onboarded within 4-6 weeks, with step-by-step guidance and dedicated support from our customer success team."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there a cost?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Prompt’s technology services are complimentary for use in pro bono clinics and academic curriculum. This includes unlimited access for faculty, students, and multidisciplinary programs. A one-time onboarding fee covers setup, training, and support from your dedicated customer success manager."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can we place students in Prompt-enabled clinics?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Absolutely! Prompt’s placement management platform partner connects your program with thousands of high-quality, mentorship-driven clinics nationwide."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What does AI in Prompt actually do?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Prompt’s AI tools help students streamline documentation, improve accuracy, and enhance compliance, mirroring modern workflows used in leading clinics."
+      }
+    }
+  ]
+}

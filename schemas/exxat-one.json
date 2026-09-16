@@ -1,0 +1,48 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/exxat-one#faq",
+  "url": "https://www.prompthealth.com/exxat-one",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What types of clinics are available through Exxat One?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Every Prompt-partnered clinic on Exxat One has been qualified through our Student Placement Initiative. That means each site meets our standards for one-on-one mentorship, facility NPS scores above 90, and clearly listed specialties by location so you know exactly what to expect before you request a placement."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "I'm a university placement coordinator and want to place students at a clinical site. Where do I start?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "All placement availability is managed through Exxat One. You can start by logging into your existing Exxat One account and searching for Prompt, or by using the access request link to join the platform."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What clinical disciplines does the student program support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Prompt partnered clinics specifically support clinical placements for physical therapy, physical therapist assistant, occupational therapy, and speech language pathology programs."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are Exxat One guides or resources available?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. For onboarding and operational support, you can visit the Exxat One Help Center at<a href=\"https://www.google.com/search?q=https%3A%2F%2Fhelp.exxatone.com%2Fhc%2Fen-us\"> </a><a href=\"https://help.exxatone.com/hc/en-us\">https://help.exxatone.com/hc/en-us</a>."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Want to learn more about Prompt’s Student Placement Initiative?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Reach out to <a href=\"mailto:students@prompthealth.com\">students@prompthealth.com</a> or <a href=\"https://meetings.hubspot.com/rebecca-arrington?uuid=4fe15f26-570c-44d4-a20d-18337c965d4b\">schedule an appointment</a> with us"
+      }
+    }
+  ]
+}

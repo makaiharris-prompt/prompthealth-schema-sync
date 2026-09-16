@@ -1,0 +1,32 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/support#faq",
+  "url": "https://www.prompthealth.com/support",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What does the onboarding process look like?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Our onboarding team guides set up, training, and data migration in the background so your clinic stays operational from day one, with timing built around your chosen go-live date. You get dedicated onboarding, role-specific training sessions, video tutorials, and an ongoing success manager. Your dedicated, US-based success manager guides setup and training, with regular check-ins and quarterly reviews to keep your goals on track."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there ongoing support after go-live?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Our support doesn't end at go-live, every account has an ongoing success manager, and we provide continued resources including advanced training, new release round-ups, and industry roundtables, plus a support center with help articles and contact options. Your support comes from our US-based team of licensed clinicians and certified billers, with dedicated contacts for clinical, billing, and EDI questions."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are there self-serve training videos or Prompt University resources?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Prompt University is our dedicated learning hub with self-serve training. Alongside it, we provide video tutorials and on-demand videos that help new team members ramp up fast, plus a knowledge base of help articles."
+      }
+    }
+  ]
+}

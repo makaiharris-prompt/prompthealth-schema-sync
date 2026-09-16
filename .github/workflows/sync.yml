@@ -1,0 +1,73 @@
+name: FAQ schema sync
+
+on:
+  schedule:
+    - cron: "0 11 * * *"        # 07:00 America/New_York (EDT)
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Write to Webflow (unchecked = dry run)"
+        type: boolean
+        default: false
+      publish:
+        description: "Allow the gated publish after writing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: faq-schema-sync          # never let two runs write schema at once
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tests
+        run: python3 test_sync.py
+
+      - name: Sync FAQ schema
+        id: sync
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+        run: |
+          set -o pipefail
+          ARGS=""
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.apply }}" = "true" ]; then
+            ARGS="$ARGS --apply"
+          fi
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.publish }}" = "true" ]; then
+            ARGS="$ARGS --publish"
+          fi
+          python3 sync.py $ARGS 2>&1 | tee run.log
+
+      - name: Commit updated snapshots
+        if: always()
+        run: |
+          git config user.name  "faq-schema-sync"
+          git config user.email "actions@github.com"
+          if ! git diff --quiet -- schemas; then
+            git add schemas
+            git commit -m "FAQ schema: sync $(date -u +%Y-%m-%d)"
+            git push
+          else
+            echo "no schema changes"
+          fi
+
+      - name: Run summary
+        if: always()
+        run: |
+          {
+            echo '## FAQ schema sync'
+            echo '```'
+            tail -n 80 run.log 2>/dev/null || echo 'no output'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

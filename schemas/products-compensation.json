@@ -1,0 +1,48 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/products/compensation#faq",
+  "url": "https://www.prompthealth.com/products/compensation",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How does Prompt Compensation integrate with Prompt EMR?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It integrates seamlessly with Prompt EMR. In practice, we build your comp models around the work captured in Prompt. Documented visits and CPT codes flow in, and we keep track of salary and performance metrics so pay is calculated against real activity. One thing to note: you generally need to be a Prompt EMR customer to use our Compensation product, with enterprise practices of 40+ providers being the exception."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does paid time off work within the compensation model?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The 2 most common approaches to managing paid time off (PTO) under variable compensation models are calibration point credit and historic average credit.\n\n• Calibration Point Credit: Credits a fixed number of visits or units based on the PTO hours taken. For example, if an employee's standard workload (calibration point) is 50 visits per week, taking 8 hours of PTO automatically credits them with 10 visits. Because this rate never changes, it eliminates guesswork.\n• Historic Average Credit: Calculates credited visits or units based on the employee's average performance over the 90 days prior to their time off. Because this average is constantly moving, the number of credited visits will fluctuate from one time-off period to the next."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the best way to share information about the new compensation model with staff?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We guide you through a structured 6-step onboarding process that includes a step dedicated specifically to messaging, to help the change land well with your team. We also provide you with templated resources that we recommend sending out 2 weeks prior to rolling out Compensation to prep your team in advance. Lastly, we also align a grace period with higher-volume cycles in your clinic so that your staff transitions at a favorable time. Our Compensation team supports the build, prep, and communication throughout."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Prompt provide salary benchmarking information to help with hiring decisions?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Unlike traditional benchmarking tools, our Compensation product focuses on helping you win over top talent during recruitment:\n\n• Visual earning pathways: Show candidates transparent plan profiles that map a clear route to their target salary and demonstrate real earning potential at your practice.\n\n• Recruiting enablement: Access dedicated resources and messaging frameworks to help candidates easily buy into your variable compensation model."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do we get this compensation data integrated into our payroll system?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Our Compensation portal simplifies payroll by automatically calculating provider earnings based on your schedule.\n\n• Custom workflows: We build tailored data exports designed for quick, hassle-free transfer into your current payroll system.\n\n• Dedicated support: Our team provides hands-on payroll training during your onboarding to ensure a smooth transition.\n\n• Continued enhancements: We are actively evolving our platform, with direct API integrations on the horizon to streamline your operations even further."
+      }
+    }
+  ]
+}
