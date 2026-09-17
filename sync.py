@@ -46,14 +46,6 @@ MAX_LOST_PAGES = 3
 MAX_LOST_FRACTION = 0.20
 MIN_ANSWER_CHARS = 20
 
-# Pages whose FAQ lives in one Webflow rich-text field (so Finsweet's table of
-# contents can index it) rather than in the attributed accordion component.
-# Keyed on the heading level that marks a question.
-#
-# Opt-in by design: every page on this site carries fs-toc-element="contents",
-# and 33 of them have question-shaped <h3>s -- blog posts and glossary entries.
-# Auto-detecting would publish those subheadings as FAQs.
-RICHTEXT_PAGES = {"/faq": "h3"}
 
 # Documented limits on the schema-markup endpoint.
 MAX_SCHEMA_BYTES = 60 * 1024
@@ -401,11 +393,7 @@ def fetch_page(path, host):
     if code != 200:
         return path, None, f"HTTP {code}"
     doc = body.decode("utf-8", "replace")
-    if path in RICHTEXT_PAGES:
-        res = faqparse.extract_richtext(doc, BASE, q_tag=RICHTEXT_PAGES[path])
-        res["richtext"] = True
-    else:
-        res = faqparse.extract(doc, BASE)
+    res = faqparse.extract_all(doc, BASE)
     res["existing"], res["existing_ok"] = faqparse.existing_jsonld(doc)
     return path, res, None
 
@@ -419,13 +407,18 @@ def assess(results, known):
     broken     -> a page that HAD schema lost its attributes; never legitimate
     lost       -> FAQ section genuinely removed
     unmigrated -> FAQs on an older component, never had attributes; report only
+    empty_rt   -> declares [data-faq-richtext-list] but nothing parsed; report only
     """
-    broken, lost, unmigrated = [], [], []
+    broken, lost, unmigrated, empty_rt = [], [], [], []
     for path, r in sorted(results.items()):
         if r["items"]:
             continue
-        if r.get("richtext"):
-            continue                      # handled by its own config, not attributes
+        if r.get("richtext_container"):
+            # The attribute declares "FAQs live here" but nothing parsed -- most
+            # likely it landed on the wrong rich-text block. Report it; one
+            # mistagged page must not freeze schema for every other page.
+            empty_rt.append(path)
+            continue
         if r["legacy"]:
             # Legacy markup and no attributes means one of two very different
             # things. If we produced schema for this page before, the component
@@ -437,18 +430,18 @@ def assess(results, known):
             lost.append(path)
 
     if broken:
-        return broken, lost, unmigrated, (
+        return broken, lost, unmigrated, empty_rt, (
             "FAQ attributes missing but legacy accordion markup still present on: "
             + ", ".join(broken)
             + ". The Webflow component likely lost its data-faq-* attributes.")
 
     if lost and (len(lost) > MAX_LOST_PAGES or
                  (known and len(lost) / len(known) > MAX_LOST_FRACTION)):
-        return broken, lost, unmigrated, (
+        return broken, lost, unmigrated, empty_rt, (
             f"{len(lost)} pages lost their FAQ section in one run "
             f"({', '.join(lost)}). Likely a publish or fetch anomaly.")
 
-    return broken, lost, unmigrated, None
+    return broken, lost, unmigrated, empty_rt, None
 
 
 def main():
@@ -567,10 +560,15 @@ def main():
     for path, err in fetch_errors.items():
         summary.append(f"SKIP  {path}: {err} (existing schema left as-is)")
 
-    broken, lost, unmigrated, fatal = assess(results, known)
+    broken, lost, unmigrated, empty_rt, fatal = assess(results, known)
     if fatal:
         print(f"FATAL: {fatal} Refusing to write.", file=sys.stderr)
         sys.exit(2)
+    for path in empty_rt:
+        summary.append(f"SKIP  {path}: has [data-faq-richtext-list] but no "
+                       "questions parsed from it - check the attribute is on "
+                       "the right rich-text block, or set "
+                       "data-faq-richtext-heading if questions are not <h3>")
     for path in unmigrated:
         summary.append(f"TODO  {path}: has FAQs on an older component with no "
                        "data-faq-* attributes - add them in Webflow to include "
@@ -600,9 +598,8 @@ def main():
             continue
         built[path] = faq_node(BASE + path, kept)
         if r.get("richtext"):
-            summary.append(f"NOTE  {path}: parsed from the rich-text field via "
-                           f"<{RICHTEXT_PAGES[path]}> headings (no per-item "
-                           "attributes needed)")
+            summary.append(f"NOTE  {path}: parsed from [data-faq-richtext-list] "
+                           "headings (no per-item attributes needed)")
         elif r["lists"] == 0:
             summary.append(f"NOTE  {path}: no [data-faq-list] wrapper (items still found)")
 

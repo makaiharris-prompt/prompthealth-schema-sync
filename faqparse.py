@@ -183,8 +183,18 @@ def existing_jsonld(doc):
     return nodes, True
 
 
+RICHTEXT_ATTR = "data-faq-richtext-list"
+RICHTEXT_HEADING_ATTR = "data-faq-richtext-heading"
+DEFAULT_Q_TAG = "h3"
+
+
+def has_richtext_faq(doc):
+    """True when the page declares a rich-text FAQ container."""
+    return RICHTEXT_ATTR in doc
+
+
 def extract_richtext(doc, base="https://www.prompthealth.com",
-                     container='fs-toc-element="contents"', q_tag="h3"):
+                     container=RICHTEXT_ATTR, q_tag=None):
     """Extract Q&As from a single rich-text field, keyed on its headings.
 
     Some pages hold their whole FAQ in one Webflow rich-text field so that
@@ -193,11 +203,13 @@ def extract_richtext(doc, base="https://www.prompthealth.com",
     a question, and everything up to the next heading of the same or higher
     rank is its answer.
 
-    Anchors on the Finsweet container attribute, which cannot be removed
-    without breaking the table of contents it exists for.
+    Anchors on [data-faq-richtext-list], a dedicated attribute. Targeting
+    Finsweet's fs-toc-element instead would be a workaround: every page on the
+    site carries it, so blog and glossary subheadings would be published as
+    FAQs. A purpose-built attribute means these pages can be auto-discovered.
 
-    Opt-in only. Nearly every page on a Webflow site shares this container, so
-    auto-detecting would turn blog and glossary subheadings into FAQs.
+    The question heading level defaults to <h3> and can be overridden per
+    container with data-faq-richtext-heading="h2".
     """
     idx = doc.find(container)
     if idx == -1:
@@ -206,6 +218,12 @@ def extract_richtext(doc, base="https://www.prompthealth.com",
     start = doc.rfind("<", 0, idx)
     span = _element_span(doc, start)
     inner = doc[span[0]:span[1]] if span else ""
+
+    if q_tag is None:
+        open_tag = doc[start:span[0]] if span else ""
+        m = re.search(RICHTEXT_HEADING_ATTR + r'\s*=\s*["\']\s*(h[1-6])\s*["\']',
+                      open_tag, re.I)
+        q_tag = m.group(1).lower() if m else DEFAULT_Q_TAG
 
     rank = int(q_tag[1])
     # A heading of the same or higher rank ends the current answer.
@@ -223,3 +241,20 @@ def extract_richtext(doc, base="https://www.prompthealth.com",
             items.append((q, a))
     return {"items": items, "lists": 1, "legacy": False,
             "noindex": bool(_NOINDEX.search(doc))}
+
+
+def extract_all(doc, base="https://www.prompthealth.com"):
+    """Everything a page offers, from either markup style.
+
+    A page may use the attributed accordion component, a rich-text container,
+    or both. Take all of it; sync's repeated-heading dedupe covers any overlap.
+    """
+    res = extract(doc, base)
+    res["richtext_container"] = has_richtext_faq(doc)
+    res["richtext"] = False
+    if res["richtext_container"]:
+        items = extract_richtext(doc, base)["items"]
+        if items:
+            res["items"] = res["items"] + items
+            res["richtext"] = True
+    return res

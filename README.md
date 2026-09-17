@@ -25,18 +25,28 @@ Data attributes on the Webflow FAQ component:
 | `[data-faq-answer]` | the answer rich text |
 | `[data-faq-list]` | the list wrapper — advisory only, reported if missing |
 
-### Pages without the attributes
+### Pages whose FAQ is one rich-text field
 
-`/faq` keeps its whole FAQ in a single Webflow rich-text field so Finsweet's table of
-contents can index it, so per-item attributes cannot be added. It is parsed from the
-rich-text structure instead: each `<h3>` inside `[fs-toc-element="contents"]` is a question,
-and everything up to the next heading of the same or higher rank is its answer. That
-container attribute is required by Finsweet, so it cannot disappear without breaking the TOC.
+`/faq` holds its whole FAQ in a single Webflow rich-text field so Finsweet's table of contents
+can index it, so per-item attributes cannot be added. Mark the wrapper instead:
 
-These pages are listed explicitly in `RICHTEXT_PAGES` in `sync.py`. **This is opt-in on
-purpose:** every page on the site carries `fs-toc-element="contents"`, and 33 of them have
-question-shaped `<h3>`s -- blog posts and glossary entries. Auto-detecting would publish
-those subheadings as FAQs.
+| Attribute | Meaning |
+|---|---|
+| `[data-faq-richtext-list]` | this rich-text block holds the FAQ |
+| `[data-faq-richtext-heading]` | optional, e.g. `"h2"` — which heading level is a question (default `h3`) |
+
+Each question heading becomes a `Question`, and everything up to the next heading of the **same
+or higher rank** becomes its answer — so `<h2>` category headings (Getting Started, Pricing, …)
+end an answer rather than leaking into it.
+
+Pages carrying the attribute are **discovered automatically**; there is no list to maintain.
+That is exactly why it exists: keying off Finsweet's own `fs-toc-element` would have been a
+workaround, since all 217 pages carry that container and 33 of them have question-shaped `<h3>`s
+(blog posts, every glossary entry) that would have been published as FAQs.
+
+A page may use the accordion component, a rich-text container, or both; all items merge into
+that page's single `FAQPage`. A container that declares itself but yields no questions is
+skipped and reported, not treated as breakage.
 
 **If you change the FAQ component, keep these attributes.** The script detects their removal
 and hard-fails rather than silently wiping schema off every page.

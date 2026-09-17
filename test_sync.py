@@ -9,8 +9,9 @@ import sync
 KNOWN = {f"p{i}" for i in range(31)}          # 31 pages had schema last run
 
 
-def page(items=(), legacy=False, lists=1):
-    return {"items": list(items), "legacy": legacy, "lists": lists}
+def page(items=(), legacy=False, lists=1, richtext_container=False):
+    return {"items": list(items), "legacy": legacy, "lists": lists,
+            "richtext_container": richtext_container}
 
 
 QA = [("Is this a question?", "This is an answer long enough to pass the check.")]
@@ -19,47 +20,47 @@ QA = [("Is this a question?", "This is an answer long enough to pass the check."
 class Assess(unittest.TestCase):
     def test_quiet_day_is_quiet(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
-        self.assertEqual(sync.assess(res, KNOWN), ([], [], [], None))
+        self.assertEqual(sync.assess(res, KNOWN), ([], [], [], [], None))
 
     def test_attributes_stripped_fails_on_first_page(self):
         """One page with legacy markup but no attributes is enough to stop everything."""
         res = {f"/p{i}": page(QA) for i in range(31)}
         res["/p0"] = page([], legacy=True)
-        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
+        broken, lost, unmig, empty_rt, fatal = sync.assess(res, KNOWN)
         self.assertEqual(broken, ["/p0"])
         self.assertIn("data-faq-*", fatal)
 
     def test_single_genuine_removal_allowed(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
         res["/p0"] = page([], legacy=False)
-        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
+        broken, lost, unmig, empty_rt, fatal = sync.assess(res, KNOWN)
         self.assertEqual((broken, lost, fatal), ([], ["/p0"], None))
 
     def test_three_removals_allowed(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
         for i in range(3):
             res[f"/p{i}"] = page([])
-        self.assertIsNone(sync.assess(res, KNOWN)[3])
+        self.assertIsNone(sync.assess(res, KNOWN)[4])
 
     def test_four_removals_aborts(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
         for i in range(4):
             res[f"/p{i}"] = page([])
-        self.assertIn("lost their FAQ section", sync.assess(res, KNOWN)[3])
+        self.assertIn("lost their FAQ section", sync.assess(res, KNOWN)[4])
 
     def test_mass_loss_aborts(self):
         res = {f"/p{i}": page([]) for i in range(31)}
-        self.assertIsNotNone(sync.assess(res, KNOWN)[3])
+        self.assertIsNotNone(sync.assess(res, KNOWN)[4])
 
     def test_unknown_page_without_faq_is_not_a_loss(self):
         """A page that never had FAQs isn't a deletion just because it has none."""
         res = {"/brand-new": page([])}
-        self.assertEqual(sync.assess(res, KNOWN), ([], [], [], None))
+        self.assertEqual(sync.assess(res, KNOWN), ([], [], [], [], None))
 
     def test_broken_beats_volume_check(self):
         """Stripped attributes are reported as breakage, not as mass deletion."""
         res = {f"/p{i}": page([], legacy=True) for i in range(31)}
-        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
+        broken, lost, unmig, empty_rt, fatal = sync.assess(res, KNOWN)
         self.assertEqual(len(broken), 31)
         self.assertIn("legacy accordion markup", fatal)
 
@@ -71,7 +72,7 @@ class Unmigrated(unittest.TestCase):
     def test_never_seen_legacy_page_is_reported_not_fatal(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
         res["/systems4pt-migration"] = page([], legacy=True)
-        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
+        broken, lost, unmig, empty_rt, fatal = sync.assess(res, KNOWN)
         self.assertIsNone(fatal)
         self.assertEqual(unmig, ["/systems4pt-migration"])
         self.assertEqual(broken, [])
@@ -79,14 +80,14 @@ class Unmigrated(unittest.TestCase):
     def test_previously_working_page_losing_attrs_is_still_fatal(self):
         res = {f"/p{i}": page(QA) for i in range(31)}
         res["/p0"] = page([], legacy=True)          # /p0 is in KNOWN
-        broken, lost, unmig, fatal = sync.assess(res, KNOWN)
+        broken, lost, unmig, empty_rt, fatal = sync.assess(res, KNOWN)
         self.assertEqual(broken, ["/p0"])
         self.assertIsNotNone(fatal)
 
     def test_many_unmigrated_pages_never_block(self):
         res = {f"/legacy{i}": page([], legacy=True) for i in range(20)}
         res.update({f"/p{i}": page(QA) for i in range(31)})
-        self.assertIsNone(sync.assess(res, KNOWN)[3])
+        self.assertIsNone(sync.assess(res, KNOWN)[4])
 
 
 class Merge(unittest.TestCase):
@@ -409,9 +410,10 @@ class NestedFaq(unittest.TestCase):
 
 
 class RichText(unittest.TestCase):
-    """/faq keeps its whole FAQ in one rich-text field for Finsweet's TOC."""
+    """/faq keeps its whole FAQ in one rich-text field for Finsweet's TOC, so
+    per-item attributes cannot be added. [data-faq-richtext-list] marks it."""
 
-    DOC = ('<div fs-toc-element="contents" class="w-richtext">'
+    DOC = ('<div data-faq-richtext-list="" fs-toc-element="contents" class="w-richtext">'
            '<h2>Pricing</h2>'
            '<h3>How much is it?</h3><p>It depends on your plan and size.</p>'
            '<p>Second paragraph of the same answer.</p>'
@@ -420,7 +422,7 @@ class RichText(unittest.TestCase):
            '<h3>Is support included?</h3><p>Yes, US-based and included.</p>'
            '</div>')
 
-    def test_extracts_h3_questions(self):
+    def test_extracts_h3_questions_by_default(self):
         items = faqparse.extract_richtext(self.DOC)["items"]
         self.assertEqual([q for q, _ in items],
                          ["How much is it?", "Are there extra fees?",
@@ -436,18 +438,78 @@ class RichText(unittest.TestCase):
         items = faqparse.extract_richtext(self.DOC)["items"]
         self.assertNotIn("Support", items[1][1])
 
-    def test_missing_container_yields_nothing(self):
-        self.assertEqual(
-            faqparse.extract_richtext("<div><h3>Q?</h3><p>A</p></div>")["items"], [])
+    def test_heading_override(self):
+        doc = ('<div data-faq-richtext-list="" data-faq-richtext-heading="h2">'
+               '<h2>Q one?</h2><p>Answer one, long enough.</p>'
+               '<h2>Q two?</h2><p>Answer two, long enough.</p></div>')
+        self.assertEqual([q for q, _ in faqparse.extract_richtext(doc)["items"]],
+                         ["Q one?", "Q two?"])
+
+    def test_no_attribute_yields_nothing(self):
+        """The blog/glossary false positive this attribute exists to prevent:
+        a Finsweet TOC container with question-shaped <h3>s but no FAQ attribute."""
+        blog = ('<div fs-toc-element="contents" class="w-richtext">'
+                '<h3>Why does PT burnout happen?</h3><p>Several reasons.</p>'
+                '<h3>How do you fix it?</h3><p>Several ways.</p></div>')
+        self.assertFalse(faqparse.has_richtext_faq(blog))
+        self.assertEqual(faqparse.extract_richtext(blog)["items"], [])
+
+    def test_detects_container(self):
+        self.assertTrue(faqparse.has_richtext_faq(self.DOC))
 
     def test_headings_without_answers_are_skipped(self):
-        doc = '<div fs-toc-element="contents"><h3>Empty?</h3><h3>Real?</h3><p>Yes.</p></div>'
+        doc = ('<div data-faq-richtext-list=""><h3>Empty?</h3><h3>Real?</h3>'
+               '<p>Yes, this one has an answer.</p></div>')
         self.assertEqual([q for q, _ in faqparse.extract_richtext(doc)["items"]],
                          ["Real?"])
 
-    def test_richtext_pages_are_opt_in(self):
-        """Auto-detecting would mark up blog and glossary subheadings."""
-        self.assertEqual(set(sync.RICHTEXT_PAGES), {"/faq"})
+
+class EmptyRichTextContainer(unittest.TestCase):
+    """A mistagged container must not freeze schema for every other page."""
+
+    def test_reported_not_fatal(self):
+        res = {f"/p{i}": page(QA) for i in range(31)}
+        res["/mistagged"] = page([], richtext_container=True)
+        broken, lost, unmig, empty_rt, fatal = sync.assess(res, KNOWN)
+        self.assertIsNone(fatal)
+        self.assertEqual(empty_rt, ["/mistagged"])
+        self.assertEqual(broken, [])
+
+    def test_not_counted_as_removal(self):
+        """Even for a page we synced before -- the container is still declared."""
+        res = {"/p0": page([], richtext_container=True)}
+        broken, lost, unmig, empty_rt, fatal = sync.assess(res, KNOWN)
+        self.assertEqual(lost, [])
+        self.assertEqual(empty_rt, ["/p0"])
+
+
+class BothModes(unittest.TestCase):
+    """A page may carry the accordion component and a rich-text container."""
+
+    DOC = ('<li data-faq-item=""><span data-faq-question="">Accordion q?</span>'
+           '<div data-faq-answer=""><p>Accordion answer, long enough.</p></div></li>'
+           '<div data-faq-richtext-list="">'
+           '<h3>Richtext q?</h3><p>Richtext answer, long enough.</p></div>')
+
+    def test_contributes_both(self):
+        r = faqparse.extract_all(self.DOC)
+        self.assertEqual([q for q, _ in r["items"]], ["Accordion q?", "Richtext q?"])
+        self.assertTrue(r["richtext"])
+
+    def test_accordion_only_page_not_flagged_richtext(self):
+        doc = ('<li data-faq-item=""><span data-faq-question="">Only q?</span>'
+               '<div data-faq-answer=""><p>Only answer, long enough.</p></div></li>')
+        r = faqparse.extract_all(doc)
+        self.assertFalse(r["richtext"])
+        self.assertFalse(r["richtext_container"])
+        self.assertEqual(len(r["items"]), 1)
+
+    def test_container_with_no_questions_is_flagged_but_empty(self):
+        doc = '<div data-faq-richtext-list=""><p>Just prose, no headings.</p></div>'
+        r = faqparse.extract_all(doc)
+        self.assertTrue(r["richtext_container"])
+        self.assertFalse(r["richtext"])
+        self.assertEqual(r["items"], [])
 
 
 if __name__ == "__main__":
