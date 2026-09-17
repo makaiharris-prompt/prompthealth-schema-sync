@@ -47,6 +47,33 @@ Without it, discovery falls back to the paths in `faqurls.txt` and no writes are
 `schemas/*.json` is the committed snapshot of every page's generated schema — the audit log.
 Diff it to see exactly what changed and when.
 
+## Before publishing
+
+```bash
+WEBFLOW_API_TOKEN=... python3 verify.py
+```
+
+Read-only. For every FAQ page it compares the schema **staged** in Webflow against the schema
+and FAQs currently **served** on the live page, and fails if:
+
+- staged schema would drop a node the live page already has (something clobbered),
+- staged schema contains a question not visible on the page (something invented),
+- the live page serves JSON-LD that cannot be parsed.
+
+It also reports whether the Designer has unpublished changes, since a full-site publish ships
+those too -- not only the FAQ schema.
+
+## Publishing is a human decision
+
+Scheduled runs **stage only**. Single Page Publishing is unavailable on this site
+(`pageId` returns `400 Invalid parameter`), so the only route is a full-site publish, which
+would carry unrelated staged Designer work with it. Rather than make that call automatically,
+the job opens a GitHub issue saying schema is waiting, and closes it once published.
+
+Publish from Webflow, or run the workflow manually with `publish=true` to use the gate.
+If Single Page Publishing is enabled later, the tool already prefers it and this becomes
+fully automatic.
+
 ## Safety
 
 A normal day changes nothing and exits 0. These rules only engage on the two cases that matter:

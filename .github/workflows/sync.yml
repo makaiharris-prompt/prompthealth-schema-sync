@@ -22,6 +22,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: faq-schema-sync          # never let two runs write schema at once
@@ -50,7 +51,11 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.apply }}" = "true" ]; then
             ARGS="$ARGS --apply"
           fi
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.publish }}" = "true" ]; then
+          # Scheduled runs deliberately do NOT publish. Single Page Publishing
+          # is unavailable here, so the only route is a full-site publish that
+          # would ship unrelated staged Designer work. A human publishes; the
+          # job just tells them there is something to publish.
+          if [ "${{ inputs.publish }}" = "true" ]; then
             ARGS="$ARGS --publish"
           fi
           if [ -n "${{ inputs.only }}" ]; then
@@ -77,6 +82,36 @@ jobs:
             git commit -m "FAQ schema: sync $(date -u +%Y-%m-%dT%H:%M)"
             git pull --rebase --autostash origin main || true
             git push
+          fi
+
+      - name: Notify that schema is waiting to be published
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PENDING=$(python3 -c "import json;print(json.load(open('state.json')).get('pending_publish',False))" 2>/dev/null || echo False)
+          TITLE="FAQ schema is staged and waiting to be published"
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" --json number -q '.[0].number' 2>/dev/null || true)
+          if [ "$PENDING" = "True" ]; then
+            BODY=$(printf '%s\n' \
+              "The FAQ schema sync wrote schema to Webflow but did not publish it." \
+              "" \
+              "**Publish from Webflow to make it live.** A full-site publish also ships" \
+              "any other staged Designer work, so publish when you are happy for that" \
+              "to go out." \
+              "" \
+              "Verify first with: \`WEBFLOW_API_TOKEN=... python3 verify.py\`" \
+              "" \
+              "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}")
+            if [ -n "$EXISTING" ]; then
+              gh issue comment "$EXISTING" --body "$BODY" && echo "commented on #$EXISTING"
+            else
+              gh issue create --title "$TITLE" --body "$BODY" && echo "opened issue"
+            fi
+          elif [ -n "$EXISTING" ]; then
+            gh issue close "$EXISTING" --comment "Schema has been published; nothing staged." && echo "closed #$EXISTING"
+          else
+            echo "nothing pending"
           fi
 
       - name: Run summary
