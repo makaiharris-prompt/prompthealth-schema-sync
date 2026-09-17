@@ -195,6 +195,33 @@ def to_nodes(existing):
     return []
 
 
+def nested_faq_nodes(nodes):
+    """Find FAQPage buried inside another node (e.g. WebPage.mainEntity).
+
+    merge() only replaces top-level FAQPage members, so a nested one survives
+    and the page ends up asserting two FAQPage entities -- with different
+    answers, since the nested copy is whatever was hand-written months ago.
+    """
+    found = []
+
+    def walk(o, path, depth=0):
+        if depth and isinstance(o, dict) and o.get("@type") == "FAQPage":
+            found.append(path)
+            return
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if not k.startswith("@"):
+                    walk(v, f"{path}.{k}", depth + 1)
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                walk(v, f"{path}[{i}]", depth + 1)
+
+    for n in nodes:
+        if n.get("@type") != "FAQPage":
+            walk(n, str(n.get("@type", "?")))
+    return found
+
+
 def merge(existing, node):
     """Replace the FAQPage member, preserve every other node untouched.
 
@@ -565,11 +592,18 @@ def main():
     # the authoritative record of what Webflow renders today, it needs no
     # endpoint, and it can be checked by eye with curl. A page whose JSON-LD we
     # cannot parse is skipped entirely rather than overwritten.
-    final, opaque = {}, []
+    final, opaque, nested = {}, [], []
     for path, node in built.items():
         r = results[path]
         if not r.get("existing_ok", True):
             opaque.append(path)
+            continue
+        # A page whose hand-written schema already embeds an FAQPage would end
+        # up declaring two, with conflicting answers. Removing part of someone
+        # else's node is not this tool's call, so skip and report.
+        buried = nested_faq_nodes(r["existing"])
+        if buried:
+            nested.append((path, buried))
             continue
         final[path] = merge(
             {"@context": "https://schema.org", "@graph": r["existing"]}
@@ -585,6 +619,11 @@ def main():
     for path in opaque:
         summary.append(f"SKIP  {path}: page serves JSON-LD that will not parse; "
                        "refusing to overwrite schema it cannot read")
+    for path, where in nested:
+        summary.append(f"SKIP  {path}: existing schema already embeds an FAQPage "
+                       f"at {where[0]}. Adding ours would declare two FAQPage "
+                       "entities with different answers. Remove the nested one "
+                       "in Webflow, then this page syncs normally.")
 
     # 6 - local validation (cheap, so everything gets it) ------------------
     for path, doc in sorted(final.items()):

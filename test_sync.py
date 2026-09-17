@@ -383,5 +383,30 @@ class Dedupe(unittest.TestCase):
                       node["mainEntity"][0]["acceptedAnswer"]["text"])
 
 
+class NestedFaq(unittest.TestCase):
+    """/practice-type/universities embeds an FAQPage inside WebPage.mainEntity.
+    merge() only replaces top-level nodes, so the page would declare two."""
+
+    def test_detects_nested_faqpage(self):
+        nodes = [{"@type": "WebPage", "name": "x",
+                  "mainEntity": {"@type": "FAQPage", "mainEntity": []}}]
+        self.assertEqual(sync.nested_faq_nodes(nodes), ["WebPage.mainEntity"])
+
+    def test_detects_deeply_nested(self):
+        nodes = [{"@type": "WebPage",
+                  "about": {"thing": [{"@type": "FAQPage"}]}}]
+        self.assertTrue(sync.nested_faq_nodes(nodes))
+
+    def test_top_level_faqpage_is_not_nested(self):
+        nodes = [{"@type": "FAQPage", "mainEntity": []},
+                 {"@type": "SoftwareApplication", "name": "y"}]
+        self.assertEqual(sync.nested_faq_nodes(nodes), [])
+
+    def test_clean_existing_schema_passes(self):
+        nodes = [{"@type": "SoftwareApplication", "name": "y",
+                  "offers": {"@type": "Offer"}}]
+        self.assertEqual(sync.nested_faq_nodes(nodes), [])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
