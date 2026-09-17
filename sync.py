@@ -38,6 +38,7 @@ _UNREAD = object()                      # sentinel: read-back failed
 CUSTOM_DOMAINS = ["www.prompthealth.com", "prompthealth.com",
                   "www.promptemr.com", "promptemr.com"]
 SNAP = Path(__file__).parent / "schemas"
+STATE = Path(__file__).parent / "state.json"
 UA = "prompthealth-schema-sync/1.0"
 
 # Refuse-to-act thresholds (see README).
@@ -306,6 +307,27 @@ def validate_remote(doc, retries=4):
 
 # ---------------------------------------------------------------- pipeline
 
+def load_state():
+    try:
+        return json.loads(STATE.read_text())
+    except Exception:                                             # noqa: BLE001
+        return {}
+
+
+def save_state(site_last_updated, note):
+    """Record the site's lastUpdated once we are done touching it.
+
+    Next run compares against this: if lastUpdated is unchanged, the only
+    pending changes are ours and publishing is safe. Any human edit moves it
+    and the gate refuses. Without this the gate deadlocks -- our own
+    unpublished write makes the site permanently look dirty to us.
+    """
+    STATE.write_text(json.dumps(
+        {"site_last_updated": site_last_updated,
+         "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+         "note": note}, indent=2) + "\n")
+
+
 def shape_of(doc):
     """Structural signature of a document: what a validator would actually test."""
     nodes = to_nodes(doc)
@@ -395,6 +417,9 @@ def main():
     ap.add_argument("--probe", action="store_true", help="probe API endpoints and exit")
     ap.add_argument("--no-remote-validate", action="store_true",
                     help="skip validator.schema.org entirely")
+    ap.add_argument("--force-publish", action="store_true",
+                    help="publish even if the gate says someone else has "
+                         "unpublished work (ships that work too)")
     ap.add_argument("--save-snapshots", action="store_true",
                     help="dry run only: also write schemas/ (they will then "
                          "claim state Webflow does not actually have)")
@@ -661,7 +686,18 @@ def main():
         sys.exit("--apply needs WEBFLOW_API_TOKEN")
 
     site_before = wf.site()
-    clean = site_before.get("lastUpdated") == site_before.get("lastPublished")
+    u0, p0 = site_before.get("lastUpdated"), site_before.get("lastPublished")
+    state = load_state()
+    ours = state.get("site_last_updated")
+    if u0 == p0:
+        clean, why = True, "site fully published before this run"
+    elif ours and u0 == ours:
+        clean, why = True, "only this tool's own changes are pending"
+    else:
+        clean, why = False, (f"lastUpdated={u0} is neither lastPublished={p0} "
+                             f"nor our recorded {ours!r}")
+    if args.force_publish and not clean:
+        clean, why = True, "--force-publish given (gate overridden)"
 
     updates = {}
     for path, (_, new, doc) in changed.items():
@@ -722,14 +758,16 @@ def main():
         f.write_text(new) if new else (f.unlink() if f.exists() else None)
 
     if not args.publish:
-        print("Staged only (--publish not set). Schema goes live on your next publish.")
+        save_state(wf.site().get("lastUpdated"), "wrote schema, --publish not set")
+        print("Staged only (--publish not set). Schema goes live on your next "
+              "publish. Recorded site state so a later run can tell our own "
+              "pending changes from anyone else's.")
         return
 
-    # Prefer Single Page Publishing: it ships only the pages we touched, so
-    # unrelated staged Designer work cannot ride along. That makes the
-    # site-level "is the site clean" test unnecessary -- which matters,
-    # because Webflow bumps lastUpdated on its own (observed 18s after a
-    # publish with no edits), so that test would otherwise almost never pass.
+    # Single Page Publishing would be ideal -- it ships only the pages we wrote
+    # -- but it is an Enterprise feature that must be enabled, and this site
+    # returns 400 "Invalid parameter: pageId". Try it anyway in case that
+    # changes; otherwise fall back to the gated full-site publish.
     single_ok, single_failed = [], []
     for pid in updates:
         code, d = wf.publish_page(pid)
@@ -737,29 +775,34 @@ def main():
 
     if not single_failed:
         print(f"Published {len(single_ok)} page(s) individually.")
+        save_state(wf.site().get("lastUpdated"), "after single-page publish")
         return
 
     first_err = single_failed[0]
     print(f"Single-page publish unavailable (page {first_err[0]} returned "
-          f"{first_err[1]}): {json.dumps(first_err[2])[:400]}\n"
-          "Falling back to the site-level gate.", file=sys.stderr)
+          f"{first_err[1]}): {json.dumps(first_err[2])[:300]}\n"
+          "Falling back to the gated full-site publish.", file=sys.stderr)
     if single_ok:
         print(f"WARNING: {len(single_ok)} page(s) already published individually "
               "before the failure.", file=sys.stderr)
 
     if not clean:
-        print("\nREFUSING TO PUBLISH the whole site: it had unpublished Designer "
-              f"work before this run (lastUpdated={site_before.get('lastUpdated')} "
-              f"!= lastPublished={site_before.get('lastPublished')}).\n"
-              "A full publish would ship that work too. Schema is staged and "
-              "will go live on your next publish.", file=sys.stderr)
+        save_state(wf.site().get("lastUpdated"),
+                   "wrote schema, did not publish - gate refused")
+        print(f"\nREFUSING TO PUBLISH the whole site: {why}.\n"
+              "Someone else has unpublished work and a full publish would ship "
+              "it too. Schema is staged and will go live on your next publish.\n"
+              "Recorded the current state: if nothing else changes, the next run "
+              "will publish.", file=sys.stderr)
         sys.exit(1)
 
+    print(f"Publish gate open: {why}.")
     code, d = wf.publish()
     print("Published whole site:", code)
     if code not in (200, 202):
         print(json.dumps(d)[:600], file=sys.stderr)
         sys.exit(2)
+    save_state(wf.site().get("lastUpdated"), "after full-site publish")
 
 
 if __name__ == "__main__":
