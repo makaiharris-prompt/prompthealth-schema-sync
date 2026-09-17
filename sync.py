@@ -314,16 +314,17 @@ def load_state():
         return {}
 
 
-def save_state(site_last_updated, note, pending=False):
+def save_state(site_last_updated, note, pending=False, clean_before=False):
     """Record the site's lastUpdated once we are done touching it.
 
-    Next run compares against this: if lastUpdated is unchanged, the only
-    pending changes are ours and publishing is safe. Any human edit moves it
-    and the gate refuses. Without this the gate deadlocks -- our own
-    unpublished write makes the site permanently look dirty to us.
+    Only recorded as "ours" when the site was already fully published before
+    this run (clean_before). Recording it while someone else's work was
+    already pending would launder their change into ours and publish it on the
+    next run -- exactly what the gate exists to prevent.
     """
     STATE.write_text(json.dumps(
-        {"site_last_updated": site_last_updated,
+        {"site_last_updated": site_last_updated if clean_before else None,
+         "clean_before": clean_before,
          "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
          "pending_publish": pending,
          "note": note}, indent=2) + "\n")
@@ -766,7 +767,8 @@ def main():
 
     if not args.publish:
         save_state(wf.site().get("lastUpdated"),
-                   "wrote schema, --publish not set", pending=True)
+                   "wrote schema, --publish not set", pending=True,
+                   clean_before=(u0 == p0))
         print("Staged only (--publish not set). Schema goes live on your next "
               "publish. Recorded site state so a later run can tell our own "
               "pending changes from anyone else's.")
@@ -783,7 +785,8 @@ def main():
 
     if updates and not single_failed:
         print(f"Published {len(single_ok)} page(s) individually.")
-        save_state(wf.site().get("lastUpdated"), "after single-page publish")
+        save_state(wf.site().get("lastUpdated"), "after single-page publish",
+                   clean_before=True)
         return
 
     if single_failed:
@@ -799,12 +802,16 @@ def main():
 
     if not clean:
         save_state(wf.site().get("lastUpdated"),
-                   "wrote schema, did not publish - gate refused", pending=True)
+                   "wrote schema, did not publish - gate refused", pending=True,
+                   clean_before=(u0 == p0))
         print(f"\nREFUSING TO PUBLISH the whole site: {why}.\n"
-              "Someone else has unpublished work and a full publish would ship "
-              "it too. Schema is staged and will go live on your next publish.\n"
-              "Recorded the current state: if nothing else changes, the next run "
-              "will publish.", file=sys.stderr)
+              "Someone else has unpublished Designer work and a full publish "
+              "would ship it too. Schema is staged and will go live on your "
+              "next publish.\n"
+              "To unblock: publish once from Webflow (or run with "
+              "--force-publish to ship the staged work deliberately). After a "
+              "clean publish this tool tracks its own state and publishes by "
+              "itself.", file=sys.stderr)
         sys.exit(1)
 
     print(f"Publish gate open: {why}.")
@@ -813,7 +820,8 @@ def main():
     if code not in (200, 202):
         print(json.dumps(d)[:600], file=sys.stderr)
         sys.exit(2)
-    save_state(wf.site().get("lastUpdated"), "after full-site publish")
+    save_state(wf.site().get("lastUpdated"), "after full-site publish",
+               clean_before=True)
 
 
 if __name__ == "__main__":
