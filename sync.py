@@ -144,8 +144,16 @@ class Webflow:
     def publish_page(self, page_id):
         """Single Page Publishing: ships only this page, so unrelated staged
         Designer work cannot ride along. Enterprise-gated; the caller falls
-        back to the site-level gate when it is unavailable."""
-        return self._call("POST", f"sites/{SITE_ID}/publish", {"pageId": page_id})
+        back to the site-level gate when it is unavailable.
+
+        The endpoint requires at least one of customDomains or
+        publishToWebflowSubdomain even when pageId is given -- omitting them
+        is a 400, not a permissions error.
+        """
+        return self._call("POST", f"sites/{SITE_ID}/publish",
+                          {"pageId": page_id,
+                           "customDomains": CUSTOM_DOMAINS,
+                           "publishToWebflowSubdomain": True})
 
     def publish(self):
         return self._call("POST", f"sites/{SITE_ID}/publish",
@@ -733,7 +741,8 @@ def main():
 
     first_err = single_failed[0]
     print(f"Single-page publish unavailable (page {first_err[0]} returned "
-          f"{first_err[1]}); falling back to the site-level gate.", file=sys.stderr)
+          f"{first_err[1]}): {json.dumps(first_err[2])[:400]}\n"
+          "Falling back to the site-level gate.", file=sys.stderr)
     if single_ok:
         print(f"WARNING: {len(single_ok)} page(s) already published individually "
               "before the failure.", file=sys.stderr)
