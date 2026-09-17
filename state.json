@@ -1,7 +1,7 @@
 {
   "site_last_updated": null,
   "clean_before": false,
+  "recorded_at": "2026-09-17T19:06:41Z",
   "pending_publish": true,
-  "recorded_at": "2026-09-17T00:20:43Z",
-  "note": "reset: run 1 recorded a lastUpdated taken while the site already had unpublished Designer work, which would have let the next run publish it. Gate stays shut until one clean publish from Webflow."
+  "note": "wrote schema, --publish not set"
 }
