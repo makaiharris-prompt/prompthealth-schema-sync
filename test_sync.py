@@ -408,5 +408,47 @@ class NestedFaq(unittest.TestCase):
         self.assertEqual(sync.nested_faq_nodes(nodes), [])
 
 
+class RichText(unittest.TestCase):
+    """/faq keeps its whole FAQ in one rich-text field for Finsweet's TOC."""
+
+    DOC = ('<div fs-toc-element="contents" class="w-richtext">'
+           '<h2>Pricing</h2>'
+           '<h3>How much is it?</h3><p>It depends on your plan and size.</p>'
+           '<p>Second paragraph of the same answer.</p>'
+           '<h3>Are there extra fees?</h3><p>No hidden fees for reminders.</p>'
+           '<h2>Support</h2>'
+           '<h3>Is support included?</h3><p>Yes, US-based and included.</p>'
+           '</div>')
+
+    def test_extracts_h3_questions(self):
+        items = faqparse.extract_richtext(self.DOC)["items"]
+        self.assertEqual([q for q, _ in items],
+                         ["How much is it?", "Are there extra fees?",
+                          "Is support included?"])
+
+    def test_answer_stops_at_next_heading(self):
+        items = faqparse.extract_richtext(self.DOC)["items"]
+        self.assertIn("Second paragraph", items[0][1])
+        self.assertNotIn("extra fees", items[0][1])
+
+    def test_h2_does_not_leak_into_answer(self):
+        """A category heading ends the answer; it is not part of it."""
+        items = faqparse.extract_richtext(self.DOC)["items"]
+        self.assertNotIn("Support", items[1][1])
+
+    def test_missing_container_yields_nothing(self):
+        self.assertEqual(
+            faqparse.extract_richtext("<div><h3>Q?</h3><p>A</p></div>")["items"], [])
+
+    def test_headings_without_answers_are_skipped(self):
+        doc = '<div fs-toc-element="contents"><h3>Empty?</h3><h3>Real?</h3><p>Yes.</p></div>'
+        self.assertEqual([q for q, _ in faqparse.extract_richtext(doc)["items"]],
+                         ["Real?"])
+
+    def test_richtext_pages_are_opt_in(self):
+        """Auto-detecting would mark up blog and glossary subheadings."""
+        self.assertEqual(set(sync.RICHTEXT_PAGES), {"/faq"})
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

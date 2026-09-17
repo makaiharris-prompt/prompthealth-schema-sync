@@ -46,6 +46,15 @@ MAX_LOST_PAGES = 3
 MAX_LOST_FRACTION = 0.20
 MIN_ANSWER_CHARS = 20
 
+# Pages whose FAQ lives in one Webflow rich-text field (so Finsweet's table of
+# contents can index it) rather than in the attributed accordion component.
+# Keyed on the heading level that marks a question.
+#
+# Opt-in by design: every page on this site carries fs-toc-element="contents",
+# and 33 of them have question-shaped <h3>s -- blog posts and glossary entries.
+# Auto-detecting would publish those subheadings as FAQs.
+RICHTEXT_PAGES = {"/faq": "h3"}
+
 # Documented limits on the schema-markup endpoint.
 MAX_SCHEMA_BYTES = 60 * 1024
 MAX_SCHEMA_DEPTH = 32
@@ -392,7 +401,11 @@ def fetch_page(path, host):
     if code != 200:
         return path, None, f"HTTP {code}"
     doc = body.decode("utf-8", "replace")
-    res = faqparse.extract(doc, BASE)
+    if path in RICHTEXT_PAGES:
+        res = faqparse.extract_richtext(doc, BASE, q_tag=RICHTEXT_PAGES[path])
+        res["richtext"] = True
+    else:
+        res = faqparse.extract(doc, BASE)
     res["existing"], res["existing_ok"] = faqparse.existing_jsonld(doc)
     return path, res, None
 
@@ -411,6 +424,8 @@ def assess(results, known):
     for path, r in sorted(results.items()):
         if r["items"]:
             continue
+        if r.get("richtext"):
+            continue                      # handled by its own config, not attributes
         if r["legacy"]:
             # Legacy markup and no attributes means one of two very different
             # things. If we produced schema for this page before, the component
@@ -584,7 +599,11 @@ def main():
             summary.append(f"SKIP  {path}: every question repeated; nothing to publish")
             continue
         built[path] = faq_node(BASE + path, kept)
-        if r["lists"] == 0:
+        if r.get("richtext"):
+            summary.append(f"NOTE  {path}: parsed from the rich-text field via "
+                           f"<{RICHTEXT_PAGES[path]}> headings (no per-item "
+                           "attributes needed)")
+        elif r["lists"] == 0:
             summary.append(f"NOTE  {path}: no [data-faq-list] wrapper (items still found)")
 
     # 5 - merge ----------------------------------------------------------

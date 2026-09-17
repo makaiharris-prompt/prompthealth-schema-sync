@@ -25,6 +25,19 @@ Data attributes on the Webflow FAQ component:
 | `[data-faq-answer]` | the answer rich text |
 | `[data-faq-list]` | the list wrapper — advisory only, reported if missing |
 
+### Pages without the attributes
+
+`/faq` keeps its whole FAQ in a single Webflow rich-text field so Finsweet's table of
+contents can index it, so per-item attributes cannot be added. It is parsed from the
+rich-text structure instead: each `<h3>` inside `[fs-toc-element="contents"]` is a question,
+and everything up to the next heading of the same or higher rank is its answer. That
+container attribute is required by Finsweet, so it cannot disappear without breaking the TOC.
+
+These pages are listed explicitly in `RICHTEXT_PAGES` in `sync.py`. **This is opt-in on
+purpose:** every page on the site carries `fs-toc-element="contents"`, and 33 of them have
+question-shaped `<h3>`s -- blog posts and glossary entries. Auto-detecting would publish
+those subheadings as FAQs.
+
 **If you change the FAQ component, keep these attributes.** The script detects their removal
 and hard-fails rather than silently wiping schema off every page.
 

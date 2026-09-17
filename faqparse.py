@@ -181,3 +181,45 @@ def existing_jsonld(doc):
         elif isinstance(parsed, dict):
             nodes.append(parsed)
     return nodes, True
+
+
+def extract_richtext(doc, base="https://www.prompthealth.com",
+                     container='fs-toc-element="contents"', q_tag="h3"):
+    """Extract Q&As from a single rich-text field, keyed on its headings.
+
+    Some pages hold their whole FAQ in one Webflow rich-text field so that
+    Finsweet's table of contents can index it. Per-item attributes cannot be
+    added there, but the structure is already explicit: each `q_tag` heading is
+    a question, and everything up to the next heading of the same or higher
+    rank is its answer.
+
+    Anchors on the Finsweet container attribute, which cannot be removed
+    without breaking the table of contents it exists for.
+
+    Opt-in only. Nearly every page on a Webflow site shares this container, so
+    auto-detecting would turn blog and glossary subheadings into FAQs.
+    """
+    idx = doc.find(container)
+    if idx == -1:
+        return {"items": [], "lists": 0, "legacy": False,
+                "noindex": bool(_NOINDEX.search(doc))}
+    start = doc.rfind("<", 0, idx)
+    span = _element_span(doc, start)
+    inner = doc[span[0]:span[1]] if span else ""
+
+    rank = int(q_tag[1])
+    # A heading of the same or higher rank ends the current answer.
+    stop = re.compile(r"<h([1-%d])\b" % rank, re.I)
+    heads = list(re.finditer(r"<(%s)\b[^>]*>(.*?)</\1>" % q_tag, inner, re.S | re.I))
+
+    items = []
+    for i, m in enumerate(heads):
+        q = clean_text(m.group(2))
+        tail = inner[m.end():heads[i + 1].start()] if i + 1 < len(heads) else inner[m.end():]
+        nxt = stop.search(tail)
+        body = tail[:nxt.start()] if nxt else tail
+        a = clean_answer(body, base)
+        if q and a:
+            items.append((q, a))
+    return {"items": items, "lists": 1, "legacy": False,
+            "noindex": bool(_NOINDEX.search(doc))}
