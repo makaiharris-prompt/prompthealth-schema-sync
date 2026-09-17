@@ -1,0 +1,56 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/solutions/billing#faq",
+  "url": "https://www.prompthealth.com/solutions/billing",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does Prompt Health include billing or is it just an EMR?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Billing is included and native, not a separate bolt-on. It connects documentation to reimbursement with AI validation, payer rules, eligibility alerts, and auto-posting. You also have flexibility in how you run it: you can bill in-house, keep your existing billing service provider, or use our own US-based RCM team."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does Prompt Health handle multi-location PT group billing?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We run multi-location groups on the same platform as solo and enterprise practices. Solo providers, multi-clinic groups, and enterprise organizations all work in one system with us, and you can add providers, locations, and volume without hitting the roadblocks that slow practices down on other EMRs. We standardize billing and reporting across your sites, with real-time financial visibility for the whole group, so you're managing multi-location billing in one connected system rather than separate instances."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is re-eligibility verification automated through the system?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. We automatically flag missing or expired coverage and visualize verified benefits with clear cues, so your team can prevent authorization denials before they happen. We surface eligibility issues tied to current or upcoming visits and keep your team on top of coverage as it changes, rather than relying on manual re-checks."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do denied claims come back and how are billing errors caught?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Errors are caught before submission, and denials are worked right inside the platform. Our AI claim scrubbing flags issues so they're fixed pre-submission, and you process claims with full visibility of payer responses without leaving Prompt. For denials, our AI identifies coding errors and highlights denial trends with recommended actions, while our Denial Tracker and Appeal Packet Management pre-fill payer forms and documents so your staff can resolve denied claims quickly. Our automation handles about 90% of the work, leaving your team to focus on the claims that actually need human attention."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Prompt notify you when payer deadlines or auth limits are approaching?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, we proactively surface these. We flag eligibility and authorization issues, help you stay up to date on insurance policies that limit annual visits, and keep your team on top of scripts and authorizations tied to a case with alerts to act quickly. We also have built-in Medicare tracking with proactive alerts (for example, around KX modifier thresholds), so limits and deadlines are caught before they cause denials rather than after."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which clearinghouse does Prompt use?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We include an integrated clearinghouse as part of our native billing, so you submit claims, track payer responses, and manage postings without leaving the platform, and clearinghouse costs are included in your plan rather than billed separately. We can confirm the specific clearinghouse for your setup during onboarding or a <a href=\"https://www.prompthealth.com/demo\">demo</a>."
+      }
+    }
+  ]
+}

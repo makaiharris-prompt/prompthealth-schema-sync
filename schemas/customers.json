@@ -1,0 +1,198 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      "name": "Customer stories",
+      "description": "Prompt is growing as the preferred all in one platform used by innovators in the rehab therapy space. Read stories on how they are using Prompt to build better outcomes.",
+      "url": "/customers",
+      "inLanguage": "en",
+      "about": {
+        "@type": "Organization",
+        "name": "Prompt Therapy Solutions",
+        "description": "All-in-one platform for rehab therapy practices including EMR, billing, patient management, and practice management solutions",
+        "url": "/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://cdn.prod.website-files.com/663e8ac23e061e4b80b016d0/677f33bd1034476363db1320_42056d3f78d6c1d27980759c475a1dc0_global-hero-dashboard.webp"
+        },
+        "sameAs": [
+          "https://www.facebook.com/promptemr",
+          "https://www.instagram.com/promptemr/",
+          "https://www.linkedin.com/company/promptemr/",
+          "https://www.tiktok.com/@prompt_health",
+          "https://www.youtube.com/@prompt_health"
+        ]
+      },
+      "hasPart": [
+        {
+          "@type": "Article",
+          "headline": "How Kinetic increased revenue per visit by $20 with Prompt Compensation",
+          "url": "/customers/kinetic",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/6931fad5c66b587132c87310_488268067_1471165140861369_1931467805548360841_n.jpg",
+          "about": {
+            "@type": "Organization",
+            "name": "Kinetic"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "Margin gains without the growing pains: JAG's 170-location rollout on Prompt",
+          "url": "/customers/jag-physical-therapy",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/6912246ce60b68bd4100d55a_thumb.jpeg",
+          "about": {
+            "@type": "Organization",
+            "name": "JAG Physical Therapy"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "Oversight on everything: How Prompt helped Edge Physical Therapy & Sports Medicine boost revenue per visit by 25%",
+          "url": "/customers/edge-physical-therapy",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/68f2665db0c409e323d14e3b_scott%20bremer.jpg",
+          "about": {
+            "@type": "Organization",
+            "name": "Edge Physical Therapy & Sports Medicine"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "The AI didn't deliver—so they switched. Here's how one clinic cut billing time by 60%+ and grew revenue by 21%",
+          "url": "/customers/college-park-physical-therapy",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/689cca898089a913966076e7_college%20park.jpg",
+          "about": {
+            "@type": "Organization",
+            "name": "College Park Physical Therapy"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "How PAR Physical Therapy adds $100 per plan of care with Prompt Engage",
+          "url": "/customers/par-physical-therapy",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/6894ef257a5761b22afce5c3_PAR-GrandOpening-22%20(1).jpeg",
+          "about": {
+            "@type": "Organization",
+            "name": "PAR Physical Therapy"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "58% completion rate and $20 more per claim: How Engage changed the game",
+          "url": "/customers/aim-sports-medicine",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/6894ecaf31d1c21c43fcc9a6_IMG_5047%20(1).jpeg",
+          "about": {
+            "@type": "Organization",
+            "name": "Aim Sports Medicine & Physical Therapy"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "60 patients a day, 5-minute notes: The EMR that keeps FYZICAL Sherman moving",
+          "url": "/customers/fyzical-sherman",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/68814793d0b14e2de7cd552e_482246857_682263007699001_2615278360574394553_n.jpg",
+          "about": {
+            "@type": "Organization",
+            "name": "FYZICAL Sherman"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "Real-time notes, real results: Inside a chiropractor's streamlined workflow with Prompt",
+          "url": "/customers/physical-therapy-chiropractic-melissa",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/687ff38a6e6322c5d2a4cf7c_AdobeStock_546237099.jpeg",
+          "about": {
+            "@type": "Organization",
+            "name": "Physical Therapy & Chiropractic of Melissa"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "Dynamic Home Therapy gains 10% profit and 300+ visits annually with Prompt + Compensation",
+          "url": "/customers/dynamic-home-therapy",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/68712fd7018771f3d5b3316e_customers_dynamic%20home%20therapy_hero.webp",
+          "about": {
+            "@type": "Organization",
+            "name": "Dynamic Home Therapy"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "I have gotten my life back: How Prompt helped this clinic cut documentation time in half",
+          "url": "/customers/patterson-physical-therapy",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/685c2f8cd25cf5328a907c57_20241101_132853-1920w.jpg",
+          "about": {
+            "@type": "Organization",
+            "name": "Patterson Physical Therapy"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "Why switching to Prompt was the best decision this clinic ever made",
+          "url": "/customers/rise-physical-therapy",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/68432f776e9c2c909a69420e_Rise2021WebSized-197%20(1).jpg",
+          "about": {
+            "@type": "Organization",
+            "name": "Rise Physical Therapy"
+          }
+        },
+        {
+          "@type": "Article",
+          "headline": "One clinician, zero chaos: How Prompt helped this solo clinician transform his practice",
+          "url": "/customers/polk-physical-therapy",
+          "image": "https://cdn.prod.website-files.com/66c3a540e4c877484687181e/684330db07c3cd879540eea4_IMG_3594.jpg",
+          "about": {
+            "@type": "Organization",
+            "name": "Polk Physical Therapy"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://www.prompthealth.com/customers#faq",
+      "url": "https://www.prompthealth.com/customers",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Do you have references I can speak to, especially in my specialty?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, we'd be glad to connect you with a practice similar to yours so you can hear directly from someone who's already been through the switch, just <a href=\"https://www.prompthealth.com/demo\">book a demo</a> and ask for a reference call. You can also browse our customer stories and filter by specialty (physical therapy, occupational therapy, speech, pediatric, and chiropractic) to find practices like yours."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you have testimonials specifically about the billing side?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We do. Several of our customer stories focus specifically on billing and collections results, and you can filter the library by the Billing and <a href=\"https://www.prompthealth.com/products/rcm\">RCM Services</a> solutions to see more. If you'd like to hear it firsthand, just ask for a billing-focused reference during your demo and we'll set it up."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I contact a reference in my area / similar practice size?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, we're happy to connect you with a practice similar to yours, just <a href=\"https://www.prompthealth.com/demo\">book a demo</a> and ask for a reference call. You can also browse our customer stories library, which you can filter by location (by state) and by practice size (from 1–9 clinicians up to 200+), so it's easy to find a match close to your size and region."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What results have other practices seen after switching?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Results vary by practice, but the stories we hear most often are gains in collections, revenue, documentation time, and capacity. What tends to drive those wins is consistent: our customers are working in fewer disconnected systems, doing less manual rework, and getting much better visibility into how their practice is performing. We're happy to connect you with a practice similar to yours so you can hear how it played out for them firsthand."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Have any large practices with big Accounts Receivable used Prompt successfully?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely. One example we point to often is <a href=\"https://www.prompthealth.com/customers/arete-health-rcm\">Arete Health</a>, a 13-location, 40+ clinician practice that moved to our full-service RCM and increased collections by over 200%. On the RCM side, we're seeing outcomes like a 97% clean claim rate and a 99.85% net collection rate, with our team managing every step of billing for you, from claims to payment posting and AR follow-up. If it'd help, just ask for an enterprise or RCM reference during your <a href=\"https://www.prompthealth.com/demo\">demo</a> and we'll connect you with a practice that's been in your shoes."
+          }
+        }
+      ]
+    }
+  ]
+}

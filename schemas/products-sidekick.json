@@ -1,0 +1,85 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "Prompt Sidekick",
+      "alternateName": "Sidekick",
+      "description": "AI scribe and documentation assistant for rehab therapy with ambient listening, real-time notes, and CPT coding feedback. Helps clinicians save hours every week with smart dictation, real-time guidance, and instant coding checks.",
+      "url": "/products/sidekick",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "en",
+      "offers": {
+        "@type": "Offer",
+        "availability": "https://schema.org/InStock"
+      },
+      "featureList": [
+        "Ambient listening and smart dictation",
+        "AI-powered automated note generation",
+        "Real-time CPT code checker",
+        "HIPAA-compliant AI chatbot (AskAI)",
+        "Specialty-specific customization",
+        "Custom documentation instructions",
+        "AI intake integration",
+        "Compliance and audit-ready checks"
+      ],
+      "provider": {
+        "@type": "Organization",
+        "name": "Prompt Therapy Solutions",
+        "url": "/"
+      },
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Physical therapists, occupational therapists, speech therapists, chiropractors, and rehab therapy clinicians"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://www.prompthealth.com/products/sidekick#faq",
+      "url": "https://www.prompthealth.com/products/sidekick",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Will the AI scribe populate information into specific SOAP note sections or just a general notes area?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Into specific sections. Sidekick drafts notes that auto-fill into a SOAP structure. Then following your review you can add all drafted notes, edit them or delete any unwanted content. You can get structured documentation, not a single general notes blob."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Sidekick automatically populate clinical goals from subjective information captured during the session?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Sidekick gives you live suggestions for note content and goals as you document, alongside real-time CPT code suggestions for your interventions. As with all of our AI, those suggestions are there to assist; your clinician always reviews and finalizes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you use Sidekick with custom templates or dictate directly to the structured fields?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Ambient listening generates complete SOAP notes, and smart dictation lets you dictate into specific areas of the chart. Custom Instructions tailor Sidekick's phrasing and content to each note type. Structured Note Generation goes a step further: it suggests subjective and objective content, and once you approve each suggestion, it fills Prompt's structured fields for you. Structured Note Generation is currently available for providers treating standard orthopedic conditions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do we need to inform patients that they are being recorded when using Sidekick?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This depends on your state's laws, and it's the clinic's responsibility to handle. Recording-consent requirements vary by state, and some states require dual (all-party) consent, so you'll want to make sure proper consent is obtained before recording and use Sidekick in line with the consent laws that apply to you. We provide guidance and resources to help, but you're responsible for following your own state and local regulations. You can find our <a href=\"https://prediction-health.helpscoutdocs.com/article/2441-faq-recording-consent-\">recording-consent FAQ</a> in the support center, and we'd recommend checking with your own counsel for your jurisdiction."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there an additional charge for the Sidekick AI scribe feature?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sidekick is an add-on enhancement to our core platform rather than part of the core EMR, and it comes with a free trial so your team can evaluate it before committing. For current Sidekick pricing tailored to your practice, <a href=\"https://www.prompthealth.com/demo/sidekick\">book a demo</a> or ask your Prompt contact."
+          }
+        }
+      ]
+    }
+  ]
+}

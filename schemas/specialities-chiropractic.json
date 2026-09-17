@@ -1,0 +1,40 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/specialities/chiropractic#faq",
+  "url": "https://www.prompthealth.com/specialities/chiropractic",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Prompt Health, and what does it do for a chiropractic practice specifically?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Prompt Health is an EHR and practice management system for chiropractic practices that runs your whole practice, billing included, on one seamless platform. For chiropractors specifically, it keeps your schedule full, automates admin work, and supports the patient experience with online scheduling, digital check-in, and easy payments. Prompt also gives you a team of DCs who act as an extension of your team to help your practice grow."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Prompt Health use a third-party clearinghouse?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, clearinghouse connectivity is built into Prompt rather than something you set up separately, and clearinghouse costs are included in your plan rather than billed as an add-on. Your onboarding includes clearinghouse transfer with EDI and ERA enrollments. The specific clearinghouse used can be confirmed for your setup during a demo."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What reporting capabilities does Prompt have for metrics and data analysis specific to a chiropractic practice?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We bring your key metrics into one place so you can make data-driven decisions. For your chiropractic practice, our reports include underbooked patients, provider capacity utilization, units billed / claim, cancellation rate, visits per discharge, top referring providers, and more. We also give you a dashboard that surfaces waitlist opportunities, eligibility issues, unsigned documents, and more."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What does the transfer of patient notes from ChiroTouch to Prompt entail?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Your team downloads the required reports from ChiroTouch and provides them in the format your onboarding team specifies. From there, Prompt securely migrates that data into your new system. Your transition also includes clearinghouse transfer with Electronic Data Interchange (EDI) and Electronic Remittance Advice (ERA) enrollments. Which notes and fields come over, and in what form, depends on what ChiroTouch lets you export. Your onboarding team scopes those details with you up front, so there are no surprises at go-live."
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/features/scheduling#faq",
+  "url": "https://www.prompthealth.com/features/scheduling",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Can patients schedule themselves online?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Patients can book online from your website, emails, or texts. Self-scheduling is built for therapy's multi-visit plans, not one visit at a time. To cancel or reschedule, patients call your clinic, keeping those changes in your team's hands. If you'd rather have control over booking, too, you can approve all appointment requests and set rules for clinicians, locations, and messaging."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do appointment reminders go out automatically by text or email?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. We send automated confirmations and reminders by text and email to limit no-shows and keep patients consistent. Confirmations go out on a set schedule, and you control which clinicians and locations are included. Some aspects of the messaging can be customized, though not fully. Reminders are included in your plan, not an add-on."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does the system notify patients if they are under scheduled for their plan of care?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, this is a Prompt Plus feature. Patients get automatic notifications when they fall behind on their plan of care, with a link to schedule online and get back on track. Teams without Prompt Plus can still see all under scheduled patients in one dashboard tool."
+      }
+    }
+  ]
+}

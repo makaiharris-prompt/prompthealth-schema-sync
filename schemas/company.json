@@ -1,0 +1,144 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "AboutPage",
+      "name": "About Prompt",
+      "url": "/company",
+      "inLanguage": "en",
+      "about": {
+        "@type": "Organization",
+        "name": "Prompt Therapy Solutions",
+        "alternateName": "Prompt Health",
+        "description": "Prompt was built to transform physical therapy with modern, all-in-one software solutions for outpatient rehab practices.",
+        "url": "/company",
+        "foundingDate": "2017-01-01",
+        "address": {
+          "@type": "PostalAddress",
+          "addressRegion": "NJ",
+          "addressCountry": "US"
+        },
+        "sameAs": [
+          "https://www.facebook.com/promptemr",
+          "https://www.instagram.com/promptemr/",
+          "https://www.linkedin.com/company/promptemr/",
+          "https://www.tiktok.com/@prompt_health",
+          "https://www.youtube.com/@prompt_health"
+        ],
+        "member": [
+          {
+            "@type": "Person",
+            "name": "Michael Dwyer",
+            "jobTitle": "Co-Founder"
+          },
+          {
+            "@type": "Person",
+            "name": "Adam Baliatico",
+            "jobTitle": "Co-Founder"
+          },
+          {
+            "@type": "Person",
+            "name": "Ray Baliatico",
+            "jobTitle": "Chief Executive Officer"
+          },
+          {
+            "@type": "Person",
+            "name": "Evan Baliatico",
+            "jobTitle": "Chief Technology Officer"
+          },
+          {
+            "@type": "Person",
+            "name": "Tony Dwyer",
+            "jobTitle": "Chief Financial Officer"
+          },
+          {
+            "@type": "Person",
+            "name": "Ed Pirone",
+            "jobTitle": "VP, Design & UX"
+          },
+          {
+            "@type": "Person",
+            "name": "Tim Dwyer",
+            "jobTitle": "VP, Growth"
+          },
+          {
+            "@type": "Person",
+            "name": "Alec Baliatico",
+            "jobTitle": "VP, Customer Success"
+          },
+          {
+            "@type": "Person",
+            "name": "Amanda Kregiel",
+            "jobTitle": "Executive Vice President"
+          },
+          {
+            "@type": "Person",
+            "name": "Erica Mallon",
+            "jobTitle": "General Counsel"
+          },
+          {
+            "@type": "Person",
+            "name": "Pedro Teixeira",
+            "jobTitle": "VP, AI Engineering"
+          },
+          {
+            "@type": "Person",
+            "name": "Ravi Atreya",
+            "jobTitle": "VP, Data Science"
+          },
+          {
+            "@type": "Person",
+            "name": "Jason Wambold",
+            "jobTitle": "VP, Operations (Compensation)"
+          },
+          {
+            "@type": "Person",
+            "name": "Vikram Sethuraman",
+            "jobTitle": "VP, Go To Market & Product (Engage)"
+          },
+          {
+            "@type": "Person",
+            "name": "Adam Kever",
+            "jobTitle": "VP, Operations"
+          },
+          {
+            "@type": "Person",
+            "name": "Cody Voorhees",
+            "jobTitle": "VP, Sales"
+          }
+        ]
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://www.prompthealth.com/company#faq",
+      "url": "https://www.prompthealth.com/company",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Who is Prompt Health?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Prompt is the AI-powered Electronic Medical Record (EMR) and practice management platform for physical therapy, occupational therapy, speech-language pathology, and chiropractic practices. But beyond the tech, we're the business partner you didn't know you needed. While most EMRs store your data, Prompt acts on it. Before the visit, in the room, and after the visit, Prompt's AI handles the work between your decisions and pauses when your judgment matters. You stay in complete control.\n\nPrompt was founded in 2017 by Mike Dwyer and Adam Baliatico to give clinics one unified platform for documentation, scheduling, billing, and practice management, instead of stitching together a handful of separate tools. Today we're used by more than 1,000 outpatient rehab therapy practices across the United States."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where is Prompt Health located?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We're headquartered in Hoboken, New Jersey, and we serve clinics across the United States."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How long has Prompt Health been around?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We were founded in 2017 and launched our first product in 2019, so we've been serving rehab therapy practices for several years now and through many generations of the product."
+          }
+        }
+      ]
+    }
+  ]
+}

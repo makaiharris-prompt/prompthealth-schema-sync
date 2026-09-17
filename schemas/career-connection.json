@@ -1,0 +1,88 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.prompthealth.com/career-connection#faq",
+  "url": "https://www.prompthealth.com/career-connection",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the Prompt Career Connection?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Prompt Career Connection is a personalized matching service where clinicians and clinics find each other with intention. It connects clinicians with tech-forward clinics to surface meaningful, long-term clinical roles that support growth, mentorship, and sustainable careers."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does the Prompt Career Connection exist?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To address clinician burnout by connecting clinicians with clinics that actually support growth. Prompt Career Connection bridges the gap between education, clinical experience, and long-term careers by matching people with tech-forward clinics built for modern care."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Who is this for?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "• PT, OT, SLP, and chiropractic clinicians exploring more fulfilling roles\n• Clinics building a strong, aligned hiring pipeline"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the Prompt Career Connection free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. It’s free for both clinicians and Prompt-partnered clinics."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to be actively job searching to participate?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. You can submit your interest anytime and Prompt will match you when the right role opens."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does this work for practicing clinicians?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Share your goals, preferences, and timing once. Prompt handles the matching by proactively reaching out to vetted clinics that invest in modern technology and long-term career growth, and contacts you when a strong match is available."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What makes Prompt clinics different?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Prompt clinics tend to invest in modern technology, prioritize mentorship and autonomy, support long-term clinical and career growth with alternative compensation models, and automate workflows that reduce admin burden and support better care delivery."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does it work for clinics?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Clinics share hiring needs and timing and Prompt matches them with aligned candidates and facilitates introductions."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why aren’t roles listed publicly?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "This isn’t a job board. Prompt accounts for where clinicians are in their journey and introduces opportunities as timing and fit align, resulting in less noise and more intentional connections."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens after a match is made?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Prompt makes an introduction and the clinic and candidate take it from there."
+      }
+    }
+  ]
+}
