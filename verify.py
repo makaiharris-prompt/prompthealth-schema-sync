@@ -78,7 +78,10 @@ def main():
         if not ok:
             problems.append(f"{path}: live page serves unparseable JSON-LD")
             continue
-        visible = faqparse.extract(html, BASE)
+        # extract_all, not extract: the same function sync.py uses, so a
+        # rich-text page like /faq is not reported as having invented
+        # every one of its questions.
+        visible = faqparse.extract_all(html, BASE)
 
         live_types = {str(n.get("@type")) for n in live_nodes} - {"FAQPage"}
         staged_types = {str(n.get("@type")) for n in staged_nodes} - {"FAQPage"}

@@ -7,6 +7,9 @@ Reads the published HTML, builds one `FAQPage` per page, merges it into that pag
 Webflow JSON-LD, writes it back through the Webflow Data API, and publishes — but only when
 that's safe.
 
+**Running it day to day? See [RUNBOOK.md](RUNBOOK.md)** — how to trigger it from the GitHub UI,
+what the output means, and what to do when something looks wrong. No terminal needed.
+
 ## Why this exists
 
 Google retired FAQ rich results in May 2026, so the audience for this markup is AI answer
@@ -76,7 +79,7 @@ Diff it to see exactly what changed and when.
 WEBFLOW_API_TOKEN=... python3 verify.py
 ```
 
-Read-only. For every FAQ page it compares the schema **staged** in Webflow against the schema
+Read-only, and it runs automatically in CI after every write. For every FAQ page it compares the schema **staged** in Webflow against the schema
 and FAQs currently **served** on the live page, and fails if:
 
 - staged schema would drop a node the live page already has (something clobbered),
@@ -85,6 +88,10 @@ and FAQs currently **served** on the live page, and fails if:
 
 It also reports whether the Designer has unpublished changes, since a full-site publish ships
 those too -- not only the FAQ schema.
+
+To revert a page's staged schema, edit it in Webflow. There is deliberately no tool for this:
+one existed briefly, restored "whatever the live page serves", and wiped an unpublished Designer
+edit because live had already stopped matching the pre-change state.
 
 ## Publishing is a human decision
 

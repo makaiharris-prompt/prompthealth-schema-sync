@@ -1,10 +1,10 @@
 name: FAQ schema sync
 
 on:
-  # Disabled until the two-page pilot confirms Webflow stores @graph correctly.
-  # Re-enable by uncommenting, then: git push
-  # schedule:
-  #   - cron: "0 11 * * *"      # 07:00 America/New_York (EDT)
+  schedule:
+    # GitHub cron is UTC and does not follow DST:
+    # 11:00 UTC = 07:00 ET in summer, 06:00 ET in winter.
+    - cron: "0 11 * * *"
   workflow_dispatch:
     inputs:
       apply:
@@ -64,6 +64,16 @@ jobs:
           echo "running: sync.py $ARGS"
           python3 sync.py $ARGS 2>&1 | tee run.log
 
+      - name: Verify staged schema against the live pages
+        # Only meaningful after a write. Runs in CI so nobody needs a token
+        # locally; a failure here stops a bad write reaching a publish.
+        if: always() && (github.event_name == 'schedule' || inputs.apply == true)
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+        run: |
+          set -o pipefail
+          python3 verify.py 2>&1 | tee verify.log
+
       - name: Commit snapshots and state
         if: always()
         run: |
@@ -100,7 +110,8 @@ jobs:
               "any other staged Designer work, so publish when you are happy for that" \
               "to go out." \
               "" \
-              "Verify first with: \`WEBFLOW_API_TOKEN=... python3 verify.py\`" \
+              "The staged schema was checked against the live pages in that run" \
+              "(see the 'Verify staged schema' step)." \
               "" \
               "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}")
             if [ -n "$EXISTING" ]; then
@@ -122,4 +133,10 @@ jobs:
             echo '```'
             tail -n 80 run.log 2>/dev/null || echo 'no output'
             echo '```'
+            if [ -f verify.log ]; then
+              echo '## Verification (staged vs live)'
+              echo '```'
+              tail -n 60 verify.log
+              echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

@@ -512,5 +512,24 @@ class BothModes(unittest.TestCase):
         self.assertEqual(r["items"], [])
 
 
+class VerifyUsesSameExtractor(unittest.TestCase):
+    """verify.py once used the accordion-only extractor, so every question on a
+    rich-text page like /faq was reported as 'not visible on the page'."""
+
+    def test_verify_calls_extract_all(self):
+        src = open("verify.py").read()
+        self.assertIn("faqparse.extract_all(html", src)
+        self.assertNotIn("faqparse.extract(html", src)
+
+    def test_extract_all_sees_richtext_questions(self):
+        doc = ('<div data-faq-richtext-list="">'
+               '<h3>Is it visible?</h3><p>Yes, and long enough to count.</p></div>')
+        visible = [q for q, _ in faqparse.extract_all(doc)["items"]]
+        staged = [q["name"] for q in
+                  sync.faq_node("https://x/y", faqparse.extract_all(doc)["items"])["mainEntity"]]
+        self.assertEqual(visible, staged)
+        self.assertEqual([q for q in staged if q not in visible], [])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
