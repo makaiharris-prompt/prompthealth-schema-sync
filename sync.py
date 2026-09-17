@@ -141,6 +141,12 @@ class Webflow:
             results[pid] = (code, None if code in (200, 201, 202) else d)
         return results
 
+    def publish_page(self, page_id):
+        """Single Page Publishing: ships only this page, so unrelated staged
+        Designer work cannot ride along. Enterprise-gated; the caller falls
+        back to the site-level gate when it is unavailable."""
+        return self._call("POST", f"sites/{SITE_ID}/publish", {"pageId": page_id})
+
     def publish(self):
         return self._call("POST", f"sites/{SITE_ID}/publish",
                           {"customDomains": CUSTOM_DOMAINS, "publishToWebflowSubdomain": True})
@@ -710,14 +716,38 @@ def main():
     if not args.publish:
         print("Staged only (--publish not set). Schema goes live on your next publish.")
         return
+
+    # Prefer Single Page Publishing: it ships only the pages we touched, so
+    # unrelated staged Designer work cannot ride along. That makes the
+    # site-level "is the site clean" test unnecessary -- which matters,
+    # because Webflow bumps lastUpdated on its own (observed 18s after a
+    # publish with no edits), so that test would otherwise almost never pass.
+    single_ok, single_failed = [], []
+    for pid in updates:
+        code, d = wf.publish_page(pid)
+        (single_ok if code in (200, 201, 202) else single_failed).append((pid, code, d))
+
+    if not single_failed:
+        print(f"Published {len(single_ok)} page(s) individually.")
+        return
+
+    first_err = single_failed[0]
+    print(f"Single-page publish unavailable (page {first_err[0]} returned "
+          f"{first_err[1]}); falling back to the site-level gate.", file=sys.stderr)
+    if single_ok:
+        print(f"WARNING: {len(single_ok)} page(s) already published individually "
+              "before the failure.", file=sys.stderr)
+
     if not clean:
-        print("\nREFUSING TO PUBLISH: the site had unpublished Designer work before this run "
-              f"(lastUpdated={site_before.get('lastUpdated')} != "
-              f"lastPublished={site_before.get('lastPublished')}).\n"
-              "Schema is staged and will go live on your next publish.", file=sys.stderr)
+        print("\nREFUSING TO PUBLISH the whole site: it had unpublished Designer "
+              f"work before this run (lastUpdated={site_before.get('lastUpdated')} "
+              f"!= lastPublished={site_before.get('lastPublished')}).\n"
+              "A full publish would ship that work too. Schema is staged and "
+              "will go live on your next publish.", file=sys.stderr)
         sys.exit(1)
+
     code, d = wf.publish()
-    print("Published:", code)
+    print("Published whole site:", code)
     if code not in (200, 202):
         print(json.dumps(d)[:600], file=sys.stderr)
         sys.exit(2)
