@@ -531,5 +531,46 @@ class VerifyUsesSameExtractor(unittest.TestCase):
         self.assertEqual([q for q in staged if q not in visible], [])
 
 
+class RichTextContainers(unittest.TestCase):
+    """A page can hold more than one rich-text container. Matching only the
+    first silently dropped every real question when the blog template gained a
+    hidden schema-output element."""
+
+    def test_all_containers_contribute(self):
+        doc = ('<div data-faq-richtext-list=""><h3>First?</h3><p>Answer one, long enough.</p></div>'
+               '<div data-faq-richtext-list=""><h3>Second?</h3><p>Answer two, long enough.</p></div>')
+        r = faqparse.extract_richtext(doc)
+        self.assertEqual([q for q, _ in r["items"]], ["First?", "Second?"])
+        self.assertEqual(r["lists"], 2)
+
+    def test_schema_holder_is_never_a_source(self):
+        """Even if it also carries the FAQ attribute."""
+        doc = ('<div data-richtext-schema="" data-faq-richtext-list="">'
+               '<h3>Should not appear?</h3><p>Schema holder body, long enough.</p></div>'
+               '<div data-faq-richtext-list=""><h3>Real question?</h3>'
+               '<p>Real answer, long enough.</p></div>')
+        self.assertEqual([q for q, _ in faqparse.extract_richtext(doc)["items"]],
+                         ["Real question?"])
+
+    def test_container_with_only_a_script_yields_nothing(self):
+        doc = ('<div data-faq-richtext-list=""><div data-rt-embed-type="true">'
+               '<script type="application/ld+json">{"a":1}</script></div></div>')
+        self.assertEqual(faqparse.extract_richtext(doc)["items"], [])
+
+    def test_embed_after_a_heading_does_not_leak_into_the_answer(self):
+        doc = ('<div data-faq-richtext-list=""><h3>Q?</h3><p>Real answer text here.</p>'
+               '<div data-rt-embed-type="true"><script type="application/ld+json">'
+               '{"@context":"https://schema.org","@type":"FAQPage"}</script></div></div>')
+        answer = faqparse.extract_richtext(doc)["items"][0][1]
+        self.assertNotIn("@context", answer)
+        self.assertNotIn("mainEntity", answer)
+        self.assertEqual(answer, "Real answer text here.")
+
+    def test_w_embed_also_stripped(self):
+        doc = ('<div data-faq-richtext-list=""><h3>Q?</h3><p>Kept text.</p>'
+               '<div class="w-embed"><script>var x = 1;</script></div></div>')
+        self.assertEqual(faqparse.extract_richtext(doc)["items"][0][1], "Kept text.")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
