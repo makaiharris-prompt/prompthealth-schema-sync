@@ -314,7 +314,7 @@ def load_state():
         return {}
 
 
-def save_state(site_last_updated, note):
+def save_state(site_last_updated, note, pending=False):
     """Record the site's lastUpdated once we are done touching it.
 
     Next run compares against this: if lastUpdated is unchanged, the only
@@ -325,6 +325,7 @@ def save_state(site_last_updated, note):
     STATE.write_text(json.dumps(
         {"site_last_updated": site_last_updated,
          "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+         "pending_publish": pending,
          "note": note}, indent=2) + "\n")
 
 
@@ -665,9 +666,15 @@ def main():
     for line in summary:
         print(" ", line)
 
-    if not changed:
-        print("\nNothing to do.")
+    pending = bool(load_state().get("pending_publish"))
+    if not changed and not (args.apply and args.publish and pending):
+        print("\nNothing to do."
+              + (" (schema staged earlier is still unpublished; re-run with "
+                 "--publish to ship it)" if pending else ""))
         return
+    if not changed:
+        print("\nNo content changes, but schema staged earlier is still "
+              "unpublished - attempting to publish it.")
 
     if not args.apply:
         # Deliberately does NOT touch schemas/. A snapshot means "this is what
@@ -758,7 +765,8 @@ def main():
         f.write_text(new) if new else (f.unlink() if f.exists() else None)
 
     if not args.publish:
-        save_state(wf.site().get("lastUpdated"), "wrote schema, --publish not set")
+        save_state(wf.site().get("lastUpdated"),
+                   "wrote schema, --publish not set", pending=True)
         print("Staged only (--publish not set). Schema goes live on your next "
               "publish. Recorded site state so a later run can tell our own "
               "pending changes from anyone else's.")
@@ -773,12 +781,15 @@ def main():
         code, d = wf.publish_page(pid)
         (single_ok if code in (200, 201, 202) else single_failed).append((pid, code, d))
 
-    if not single_failed:
+    if updates and not single_failed:
         print(f"Published {len(single_ok)} page(s) individually.")
         save_state(wf.site().get("lastUpdated"), "after single-page publish")
         return
 
-    first_err = single_failed[0]
+    if single_failed:
+        first_err = single_failed[0]
+    else:                                   # nothing written this run
+        first_err = (None, "n/a", {"note": "no pages written this run"})
     print(f"Single-page publish unavailable (page {first_err[0]} returned "
           f"{first_err[1]}): {json.dumps(first_err[2])[:300]}\n"
           "Falling back to the gated full-site publish.", file=sys.stderr)
@@ -788,7 +799,7 @@ def main():
 
     if not clean:
         save_state(wf.site().get("lastUpdated"),
-                   "wrote schema, did not publish - gate refused")
+                   "wrote schema, did not publish - gate refused", pending=True)
         print(f"\nREFUSING TO PUBLISH the whole site: {why}.\n"
               "Someone else has unpublished work and a full publish would ship "
               "it too. Schema is staged and will go live on your next publish.\n"
