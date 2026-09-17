@@ -4,8 +4,8 @@ Keeps `FAQPage` JSON-LD on **prompthealth.com** in sync with the FAQs actually p
 without anyone maintaining schema by hand.
 
 Reads the published HTML, builds one `FAQPage` per page, merges it into that page's existing
-Webflow JSON-LD, writes it back through the Webflow Data API, and publishes — but only when
-that's safe.
+Webflow JSON-LD, and writes it back through the Webflow Data API. It never publishes on its own —
+it stages the change and raises a GitHub issue for a person to publish.
 
 **Running it day to day? See [RUNBOOK.md](RUNBOOK.md)** — how to trigger it from the GitHub UI,
 what the output means, and what to do when something looks wrong. No terminal needed.
