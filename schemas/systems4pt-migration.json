@@ -6,6 +6,14 @@
   "mainEntity": [
     {
       "@type": "Question",
+      "name": "How long does it take to switch to Prompt?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most clinics are fully up and running within a few days. We handle data migration, system configuration, and team onboarding, so you don’t have to."
+      }
+    },
+    {
+      "@type": "Question",
       "name": "Will there be downtime during the transition?",
       "acceptedAnswer": {
         "@type": "Answer",
