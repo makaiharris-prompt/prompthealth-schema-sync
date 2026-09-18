@@ -67,7 +67,7 @@ Click the run to watch it; the summary at the bottom shows every page and what h
 
 Blog posts work differently from normal pages, because a whole collection shares one template —
 writing schema there would put identical FAQs on every post. Instead each post stores its own
-schema in a CMS field (`faq-schema`) that a hidden element on the template outputs.
+schema in a CMS field (`faq-schema-embed`) that an HTML Embed element on the template outputs.
 
 Two things follow:
 
@@ -77,8 +77,8 @@ Two things follow:
 - **A post needs FAQ markup to be picked up.** Add the FAQ block to the post as usual; the job
   finds it on the next run. Nothing to configure per post.
 
-Don't edit the `faq-schema` field by hand — the job overwrites it. Your FAQ content lives in the
-`FAQs` field, which the job only ever reads.
+Don't edit the `faq-schema-embed` field by hand — the job overwrites it. Your FAQ content lives
+in the `FAQs` field, which the job only ever reads.
 
 ## Publishing
 

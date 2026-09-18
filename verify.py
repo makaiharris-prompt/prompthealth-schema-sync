@@ -11,6 +11,11 @@ Answers three questions before you publish:
   2. Does the staged FAQ content match the visible page?     (no invented Q&As)
   3. What exactly changes?                                   (the diff)
 
+CMS items are checked differently. They publish per item, so what is stored is
+already live -- the question is whether it REACHES the page. A stored schema
+missing from the served HTML means the template's HTML Embed is not bound to
+the field, which looks like success from the API's side and ships nothing.
+
 Exits non-zero if anything looks wrong. Writes nothing, publishes nothing.
 """
 import json
@@ -20,7 +25,7 @@ import urllib.error
 import urllib.request
 
 import faqparse
-from sync import BASE, BETA, SITE_ID, Webflow, to_nodes
+from sync import BASE, BETA, CMS_COLLECTIONS, SITE_ID, Webflow, to_nodes
 
 TOKEN = os.environ.get("WEBFLOW_API_TOKEN") or sys.exit("WEBFLOW_API_TOKEN not set")
 wf = Webflow(TOKEN)
@@ -30,6 +35,75 @@ def fetch(url):
     req = urllib.request.Request(url, headers={"User-Agent": "verify/1.0"})
     with urllib.request.urlopen(req, timeout=45) as r:
         return r.read().decode("utf-8", "replace")
+
+
+def check_cms(problems):
+    """Confirm each item's stored schema actually reaches its live page.
+
+    Returns rows of (path, stored_qs, live_qs, visible_qs). Unlike static
+    pages, there is no separate "staged" state to compare against: the field
+    value IS what ships. So the failure this catches is a binding problem --
+    correct JSON written to a field the template never outputs.
+    """
+    rows = []
+    for cid, cfg in CMS_COLLECTIONS.items():
+        field, prefix = cfg["field"], cfg["path"]
+        try:
+            items = wf.list_items(cid)
+        except Exception as e:                                    # noqa: BLE001
+            problems.append(f"{cfg['name']}: could not list items ({e})")
+            continue
+
+        for item in items:
+            if item.get("isDraft") or item.get("isArchived"):
+                continue
+            fd = item.get("fieldData") or {}
+            stored = (fd.get(field) or "").strip()
+            if not stored:
+                continue                        # no FAQs on this post; nothing to check
+            path = f"{prefix}/{fd.get('slug')}"
+
+            try:
+                doc = json.loads(stored)
+            except ValueError as e:
+                problems.append(f"{path}: stored {field} is not valid JSON ({e})")
+                continue
+            stored_qs = [q.get("name") for q in doc.get("mainEntity", [])]
+
+            try:
+                html = fetch(BASE + path)
+            except Exception as e:                                # noqa: BLE001
+                problems.append(f"{path}: could not fetch live page ({e})")
+                continue
+
+            live_nodes, ok = faqparse.existing_jsonld(html)
+            if not ok:
+                problems.append(f"{path}: live page serves unparseable JSON-LD")
+                continue
+            live_faq = next((n for n in live_nodes
+                             if n.get("@type") == "FAQPage"), None)
+            if not live_faq:
+                problems.append(
+                    f"{path}: {field} holds {len(stored_qs)} question(s) but the "
+                    "live page serves no FAQPage -- the template's HTML Embed is "
+                    "probably not bound to this field, or is unpublished")
+                continue
+            live_qs = [q.get("name") for q in live_faq.get("mainEntity", [])]
+
+            missing = [q for q in stored_qs if q not in live_qs]
+            if missing:
+                problems.append(f"{path}: {len(missing)} stored question(s) missing "
+                                f"from the live page, e.g. {missing[0][:50]!r}")
+
+            visible = faqparse.extract_all(html, BASE)
+            visible_qs = [q for q, _ in visible["items"]]
+            invented = [q for q in stored_qs if q not in visible_qs]
+            if invented:
+                problems.append(f"{path}: {len(invented)} question(s) in schema are "
+                                f"not visible on the page, e.g. {invented[0][:50]!r}")
+
+            rows.append((path, len(stored_qs), len(live_qs), len(visible_qs)))
+    return rows
 
 
 def main():
@@ -109,6 +183,15 @@ def main():
     print(f"\n{len(rows)} page(s) would gain or update FAQ schema.")
     print("STAGED vs VISIBLE differ where repeated headings were dropped "
           "(see the sync run's DUPE lines) - staged should never exceed visible.")
+
+    cms_rows = check_cms(problems)
+    if cms_rows:
+        print(f"\n{'CMS ITEM':34} {'STORED':>6} {'LIVE':>7} {'VISIBLE':>8}")
+        for path, sq, lq, vq in cms_rows:
+            flag = " " if sq == lq and sq <= vq else "!"
+            print(f"{flag}{path:33} {sq:6} {lq:7} {vq:8}")
+        print(f"{len(cms_rows)} CMS item(s) serving FAQ schema. CMS items publish "
+              "per item, so STORED and LIVE should always agree.")
 
     if problems:
         print("\nPROBLEMS:")

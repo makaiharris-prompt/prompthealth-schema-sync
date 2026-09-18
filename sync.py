@@ -41,19 +41,20 @@ SNAP = Path(__file__).parent / "schemas"
 CMS_SNAP = Path(__file__).parent / "schemas-cms"
 
 # CMS collections whose items carry FAQs. Adding one is config, not code.
-# `field` is the rich-text field the generated schema is written to -- it must
-# be bound to a hidden Rich Text element on that collection's template, since a
-# CMS field only reaches the page if something outputs it.
+# `field` is the multi-line PlainText field the generated schema is written to.
+# It must be bound inside an HTML Embed element on that collection's template,
+# because a CMS field only reaches the page if something outputs it, and only
+# an HTML Embed renders the binding unescaped. The surrounding
+# <script type="application/ld+json"> lives in that embed, in the Designer --
+# the field holds the bare JSON document and nothing else.
+#
+# Not the page-settings JSON-LD field: bindings there are HTML-escaped
+# (&#39; for an apostrophe, &quot; for a quote), which destroys the JSON.
 CMS_COLLECTIONS = {
     "67787eea77d43b89f397747b": {"name": "Blog posts",
-                                 "field": "faq-schema-3",
+                                 "field": "faq-schema-embed",
                                  "path": "/blog"},
 }
-
-# Webflow's rich-text embed wrapper. Bindings elsewhere are HTML-escaped
-# (&#39; for an apostrophe), which would destroy JSON; embeds are not.
-EMBED_OPEN = "<div data-rt-embed-type='true'><script type=\"application/ld+json\">"
-EMBED_CLOSE = "</script></div>"
 STATE = Path(__file__).parent / "state.json"
 UA = "prompthealth-schema-sync/1.0"
 
@@ -61,6 +62,11 @@ UA = "prompthealth-schema-sync/1.0"
 MAX_LOST_PAGES = 3
 MAX_LOST_FRACTION = 0.20
 MIN_ANSWER_CHARS = 20
+
+# A CMS PlainText field has a length ceiling a RichText field does not, and
+# the collection declares no maxLength, so an over-long value could be
+# rejected or silently truncated into malformed JSON on a live page.
+MAX_CMS_TEXT_BYTES = 10000
 
 
 # Documented limits on the schema-markup endpoint.
@@ -559,7 +565,12 @@ def sync_cms(wf, args, summary):
                 failed.append(f"{path}: {'; '.join(errs)}")
                 continue
 
-            value = EMBED_OPEN + json.dumps(doc, ensure_ascii=False) + EMBED_CLOSE
+            value = json.dumps(doc, ensure_ascii=False)
+            if len(value.encode()) > MAX_CMS_TEXT_BYTES:
+                failed.append(f"{path}: schema is {len(value.encode())} bytes, "
+                              f"over the {MAX_CMS_TEXT_BYTES} byte CMS text "
+                              "field limit")
+                continue
             if (item.get("fieldData") or {}).get(field) == value:
                 continue
 

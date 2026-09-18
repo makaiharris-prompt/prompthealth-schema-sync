@@ -512,6 +512,25 @@ class BothModes(unittest.TestCase):
         self.assertEqual(r["items"], [])
 
 
+class VerifyChecksCms(unittest.TestCase):
+    """The CMS path publishes itself, so an unrendered field ships silently.
+    verify.py had no CMS coverage at all, which is how a write to a field the
+    template never output went unnoticed."""
+
+    def test_check_cms_is_defined_and_called(self):
+        src = open("verify.py").read()
+        self.assertIn("def check_cms(", src)
+        body = src[src.index("def main("):]
+        self.assertIn("check_cms(problems)", body)
+
+    def test_check_cms_flags_a_missing_faqpage(self):
+        """The exact failure: correct JSON stored, nothing on the page."""
+        src = open("verify.py").read()
+        body = src[src.index("def check_cms("):src.index("def main(")]
+        self.assertIn("serves no FAQPage", body)
+        self.assertIn("CMS_COLLECTIONS", body)
+
+
 class VerifyUsesSameExtractor(unittest.TestCase):
     """verify.py once used the accordion-only extractor, so every question on a
     rich-text page like /faq was reported as 'not visible on the page'."""
@@ -573,27 +592,42 @@ class RichTextContainers(unittest.TestCase):
 
 
 class CmsEmbed(unittest.TestCase):
-    """CMS items get schema through a rich-text embed, because page-settings
-    bindings are HTML-escaped and would destroy the JSON."""
+    """CMS items store the bare JSON document. The <script> tag lives in an
+    HTML Embed element on the template, which renders its binding unescaped --
+    unlike the page-settings JSON-LD field, whose bindings are HTML-escaped."""
 
-    def test_wrapper_matches_webflow_stored_shape(self):
+    def test_value_is_bare_json(self):
         doc = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": []}
-        value = sync.EMBED_OPEN + json.dumps(doc, ensure_ascii=False) + sync.EMBED_CLOSE
-        self.assertTrue(value.startswith("<div data-rt-embed-type='true'>"))
-        self.assertIn('<script type="application/ld+json">', value)
-        self.assertTrue(value.endswith("</script></div>"))
+        value = json.dumps(doc, ensure_ascii=False)
+        self.assertEqual(json.loads(value), doc)
+        # The wrapper belongs in the Designer, not in the field value.
+        self.assertNotIn("data-rt-embed-type", value)
+        self.assertNotIn("<script", value)
 
     def test_quotes_are_json_escaped_not_html_escaped(self):
         """The failure mode that killed the page-settings route."""
         doc = {"@context": "https://schema.org", "@type": "FAQPage",
                "mainEntity": [{"@type": "Question", "name": 'Has "quotes" & an ampersand?',
                                "acceptedAnswer": {"@type": "Answer", "text": "A" * 30}}]}
-        value = sync.EMBED_OPEN + json.dumps(doc, ensure_ascii=False) + sync.EMBED_CLOSE
+        value = json.dumps(doc, ensure_ascii=False)
         self.assertNotIn("&quot;", value)
         self.assertNotIn("&amp;", value)
-        inner = value[len(sync.EMBED_OPEN):-len(sync.EMBED_CLOSE)]
-        self.assertEqual(json.loads(inner)["mainEntity"][0]["name"],
+        self.assertEqual(json.loads(value)["mainEntity"][0]["name"],
                          'Has "quotes" & an ampersand?')
+
+    def test_oversize_value_is_rejected(self):
+        """A PlainText field can truncate; malformed JSON on a live page is
+        worse than no schema, so an over-long document must not be written."""
+        src = open("sync.py").read()
+        self.assertIn("MAX_CMS_TEXT_BYTES", src)
+        body = src[src.index("def sync_cms("):src.index("def main(")]
+        self.assertIn("MAX_CMS_TEXT_BYTES", body)
+
+        big = {"@context": "https://schema.org", "@type": "FAQPage",
+               "mainEntity": [{"@type": "Question", "name": "Q" * 200,
+                               "acceptedAnswer": {"@type": "Answer", "text": "A" * 500}}
+                              for _ in range(30)]}
+        self.assertGreater(len(json.dumps(big).encode()), sync.MAX_CMS_TEXT_BYTES)
 
     def test_collections_are_configured_not_hardcoded(self):
         for cid, cfg in sync.CMS_COLLECTIONS.items():

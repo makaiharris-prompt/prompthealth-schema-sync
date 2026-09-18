@@ -158,6 +158,37 @@ duplicate questions, no too-short answers), then **changed** documents go throug
 Only changed documents are sent remotely — unchanged ones were validated when first written,
 and re-checking all of them every run just burns the validator's rate limit.
 
+## CMS collections
+
+A Collection template is one page serving many items, so page-level schema would stamp identical
+FAQs on every post. Each item stores its own schema instead, in a multi-line **PlainText** field
+that an **HTML Embed** element on the template outputs:
+
+```
+CMS_COLLECTIONS = {
+    "<collection id>": {"name": "Blog posts",
+                        "field": "faq-schema-embed",
+                        "path": "/blog"},
+}
+```
+
+Adding a collection is that entry plus three things in Webflow: the field, an HTML Embed on the
+template containing `<script type="application/ld+json">` with the field bound inside it, and the
+FAQ attributes on the template so the questions can be parsed.
+
+**Why an HTML Embed and not the page-settings JSON-LD field.** Webflow HTML-escapes bindings in
+the page-settings field — `'` becomes `&#39;`, `"` becomes `&quot;` — which turns valid JSON into
+entities. An HTML Embed renders its binding raw, so the JSON survives. This is why the field holds
+the bare document and the `<script>` tag lives in the Designer.
+
+The value is capped at `MAX_CMS_TEXT_BYTES` (10,000). A PlainText field can truncate, and a
+truncated document is malformed JSON on a live page — worse than no schema — so an over-long
+document is reported and skipped rather than written.
+
+CMS items publish **per item**, so this path ships without a full-site publish. That also means a
+mistake goes live immediately, which is why `verify.py` checks that every stored schema actually
+appears in the served HTML: a field the template does not output looks like success from the API.
+
 ## Scope
 
 Auto-discovered every run from the Webflow page list, so a new FAQ page is covered with no
