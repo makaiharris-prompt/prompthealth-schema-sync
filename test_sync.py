@@ -512,6 +512,44 @@ class BothModes(unittest.TestCase):
         self.assertEqual(r["items"], [])
 
 
+class WorkflowAlerts(unittest.TestCase):
+    """The schedule dropped from daily to monthly, so a failure nobody sees
+    costs a month of stale schema instead of a day. The Slack alert is what
+    makes that cadence safe -- and it is invisible until something breaks,
+    which is exactly the kind of code this repo has shipped dead before."""
+
+    WF = ".github/workflows/sync.yml"
+
+    def wf(self):
+        return open(self.WF).read()
+
+    def test_schedule_is_monthly(self):
+        """Daily -> monthly was deliberate; going back should be too."""
+        self.assertIn('- cron: "0 11 1 * *"', self.wf())
+
+    def test_slack_step_is_gated_on_failure(self):
+        src = self.wf()
+        step = src[src.index("- name: Alert Slack on failure"):src.index("- name: Run summary")]
+        self.assertIn("if: failure()", step)
+        self.assertIn("secrets.SLACK_WEBHOOK_URL", step)
+
+    def test_alert_cannot_change_the_runs_verdict(self):
+        """A Slack outage must not mask the failure that triggered the alert."""
+        src = self.wf()
+        step = src[src.index("- name: Alert Slack on failure"):src.index("- name: Run summary")]
+        self.assertIn("continue-on-error: true", step)
+        self.assertIn('if [ -z "$SLACK_WEBHOOK_URL" ]', step)
+
+    def test_payload_is_built_with_jq(self):
+        """Log text carries quotes, backslashes and newlines. Interpolating it
+        into JSON yields a malformed body Slack drops silently -- a broken
+        alert is worse than none, because it looks like nothing went wrong."""
+        src = self.wf()
+        step = src[src.index("- name: Alert Slack on failure"):src.index("- name: Run summary")]
+        self.assertIn("jq -n --arg", step)
+        self.assertNotIn('--data \'{"text"', step)
+
+
 class VerifyChecksCms(unittest.TestCase):
     """The CMS path publishes itself, so an unrendered field ships silently.
     verify.py had no CMS coverage at all, which is how a write to a field the

@@ -11,16 +11,17 @@ and tells us when there's something to publish. Nobody has to write or maintain 
 
 ---
 
-## The daily flow
+## The monthly flow
 
 ```mermaid
 flowchart TD
-    A([7am daily, or you run it by hand]) --> B[Read the FAQs off every live page]
+    A([7am ET on the 1st, or you run it by hand]) --> B[Read the FAQs off every live page]
     B --> C{Anything changed<br/>since last time?}
     C -->|No| D([Done. Silent, nothing written])
     C -->|Yes| E[Write schema into Webflow]
     E --> F[Check what was written<br/>against the live pages]
-    F -->|Problem found| G([Run fails — see Troubleshooting])
+    F -->|Problem found| G([Run fails — posts to Slack])
+    G --> K[See Troubleshooting]
     F -->|All good| H[Open/update a GitHub issue:<br/>'FAQ schema is staged']
     H --> I([You publish in Webflow])
     I --> J[Next run closes the issue]
@@ -31,7 +32,11 @@ flowchart TD
     style J fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
 ```
 
-A normal day is silent: no FAQ edits means nothing written, nothing committed, no issue.
+A normal run is silent: no FAQ edits means nothing written, nothing committed, no issue. **If a run
+fails, it posts to Slack** — you don't have to watch the Actions tab.
+
+⚠️ **The job only runs once a month.** Nothing you change in Webflow reaches the schema until the
+next 1st — or until you run it by hand, below.
 
 ---
 
@@ -55,6 +60,10 @@ All in the browser — no terminal, nothing to install.
 
 - **See what would change** → everything off. Safe, writes nothing.
 - **Push schema to Webflow** → *Write to Webflow* on. Then publish in Webflow.
+
+**Just published a blog post with FAQs?** Its schema won't be live until the next monthly run.
+Run the job by hand with *Write to Webflow* on and it ships straight away — blog posts publish
+per item, so there's nothing to publish afterwards in Webflow.
 
 Click the run to watch it; the summary at the bottom shows every page and what happened.
 
@@ -180,6 +189,11 @@ them. That's deliberate.
 ---
 
 ## Troubleshooting
+
+**A failed run posts to Slack** with a link and the last lines of the output, so you shouldn't need
+to watch the Actions tab. If the alert itself is broken the run still fails — check Actions
+directly if a monthly run goes quiet when you expected changes.
+
 
 **`FATAL: FAQ attributes missing but legacy accordion markup still present`**
 The FAQ component lost its `data-faq-*` attributes. Nothing was written. Restore them in Webflow.
