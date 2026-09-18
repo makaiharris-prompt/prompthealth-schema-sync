@@ -141,6 +141,7 @@ the Finsweet table of contents):
 |---|---|
 | `data-faq-richtext-list` | The rich-text block |
 | `data-faq-richtext-heading` | Optional — which heading is a question (default `h3`) |
+| `data-richtext-schema` | The embed that outputs the schema — tells the job to ignore it, not read it as FAQ content. Don't remove it. |
 
 **Headings are preferred, but bold works too.** Inside `[data-faq-richtext-list]`, if the block
 has no `<h3>` at all, questions written as **bold text followed by the answer** are picked up

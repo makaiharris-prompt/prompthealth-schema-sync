@@ -37,6 +37,11 @@ can index it, so per-item attributes cannot be added. Mark the wrapper instead:
 |---|---|
 | `[data-faq-richtext-list]` | this rich-text block holds the FAQ |
 | `[data-faq-richtext-heading]` | optional, e.g. `"h2"` — which heading level is a question (default `h3`) |
+| `[data-richtext-schema]` | this block **outputs** schema — never read as a source of FAQs |
+
+`[data-richtext-schema]` marks the embed that renders the generated JSON-LD. It is load-bearing:
+the schema block sits on the page alongside the content, and without this attribute a parser run
+would read our own output back as if it were FAQ content. Keep it on the embed.
 
 Each question heading becomes a `Question`, and everything up to the next heading of the **same
 or higher rank** becomes its answer — so `<h2>` category headings (Getting Started, Pricing, …)
