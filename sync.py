@@ -116,7 +116,11 @@ class Webflow:
     def pages(self):
         out, offset = [], 0
         while True:
-            _, d = self._call("GET", f"sites/{SITE_ID}/pages?limit=100&offset={offset}")
+            code, d = self._call("GET",
+                                 f"sites/{SITE_ID}/pages?limit=100&offset={offset}")
+            if code != 200:
+                raise RuntimeError(f"listing pages returned {code}: "
+                                   f"{json.dumps(d)[:200]}")
             batch = d.get("pages", [])
             out += batch
             total = d.get("pagination", {}).get("total", len(out))
@@ -162,9 +166,18 @@ class Webflow:
     def list_items(self, collection_id):
         out, offset = [], 0
         while True:
-            _, d = self._call("GET",
-                              f"collections/{collection_id}/items"
-                              f"?limit=100&offset={offset}")
+            code, d = self._call("GET",
+                                 f"collections/{collection_id}/items"
+                                 f"?limit=100&offset={offset}")
+            # Never return [] on an error: an empty list is indistinguishable
+            # from "this collection has no items", so a missing CMS scope would
+            # look like a clean run with nothing to do.
+            if code != 200:
+                raise RuntimeError(
+                    f"listing items for collection {collection_id} returned "
+                    f"{code}: {json.dumps(d)[:200]}"
+                    + ("  (the token likely lacks CMS scope)"
+                       if code in (401, 403) else ""))
             batch = d.get("items", [])
             out += batch
             total = d.get("pagination", {}).get("total", len(out))
@@ -861,15 +874,31 @@ def main():
     for line in summary:
         print(" ", line)
 
+    # CMS items get schema through a rich-text embed on each item, not through
+    # page settings -- a collection is one template page serving many items.
+    cms_seen = cms_qs = cms_changed = 0
+    if wf and CMS_COLLECTIONS:
+        try:
+            cms_seen, cms_qs, cms_changed, cms_failed = sync_cms(wf, args, summary)
+        except Exception as e:                                    # noqa: BLE001
+            print(f"FATAL: CMS pass failed: {e}", file=sys.stderr)
+            sys.exit(2)
+        verb = "updated" if args.apply else "would update"
+        print(f"  CMS: {cms_seen} item(s), {cms_qs} Q&As, {cms_changed} {verb}")
+        for f_ in cms_failed:
+            print(f"FATAL: {f_}", file=sys.stderr)
+        if cms_failed:
+            sys.exit(2)
+
     pending = bool(load_state().get("pending_publish"))
-    if not changed and not (args.apply and args.publish and pending):
+    if not changed and not cms_changed and not (args.apply and args.publish and pending):
         print("\nNothing to do."
               + (" (schema staged earlier is still unpublished; re-run with "
                  "--publish to ship it)" if pending else ""))
         return
     if not changed:
         if not pending:
-            return
+            return          # CMS work, if any, is already written and published
         print("\nNo content changes, but schema staged earlier is still "
               "unpublished - attempting to publish it.")
 

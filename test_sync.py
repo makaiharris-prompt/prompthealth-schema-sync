@@ -612,5 +612,52 @@ class StagingGuard(unittest.TestCase):
         self.assertIn("REFUSING", r.stdout + r.stderr)
 
 
+class CmsPassIsReachable(unittest.TestCase):
+    """sync_cms() was defined, unit-testable, and never called for an entire
+    build cycle -- 79 tests passed while the feature was dead code. These are
+    blunt source checks, but they catch exactly that: code that exists, works,
+    and is never reached."""
+
+    def test_main_calls_sync_cms(self):
+        src = open("sync.py").read()
+        main_src = src[src.index("def main():"):]
+        self.assertIn("sync_cms(", main_src,
+                      "sync_cms is never invoked from main()")
+
+    def test_cms_changes_keep_the_run_alive(self):
+        """A run with no static changes but pending CMS work must not
+        short-circuit on the 'nothing to do' branch."""
+        src = open("sync.py").read()
+        self.assertIn("not changed and not cms_changed", src)
+
+
+class ListItemsFailsLoudly(unittest.TestCase):
+    """An empty list is indistinguishable from 'no items', so an auth or scope
+    error must raise rather than silently reporting nothing to do."""
+
+    class _Stub(sync.Webflow):
+        def __init__(self, code, body):
+            self._code, self._body = code, body
+
+        def _call(self, method, path, body=None, base=None):
+            return self._code, self._body
+
+    def test_non_200_raises(self):
+        wf = self._Stub(403, {"message": "forbidden"})
+        with self.assertRaises(RuntimeError) as cm:
+            wf.list_items("abc")
+        self.assertIn("403", str(cm.exception))
+        self.assertIn("CMS scope", str(cm.exception))
+
+    def test_200_with_no_items_is_fine(self):
+        wf = self._Stub(200, {"items": [], "pagination": {"total": 0}})
+        self.assertEqual(wf.list_items("abc"), [])
+
+    def test_pages_non_200_raises(self):
+        wf = self._Stub(500, {"message": "boom"})
+        with self.assertRaises(RuntimeError):
+            wf.pages()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
