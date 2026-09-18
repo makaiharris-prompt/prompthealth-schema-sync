@@ -116,7 +116,7 @@ Message prefixes:
 | `VALID` | Passed the schema.org validator | No |
 | `SKIP` | Page deliberately left alone (noindex, or a conflict) | Sometimes — read it |
 | `DUPE` | Repeated headings dropped (see `/compare/*` below) | No |
-| `TODO` | Page has FAQs but not the required markup | Yes, in Webflow |
+| `TODO` | Page has FAQs but not the required markup — including an FAQ block written with **bold instead of `<h3>`** | Yes, in Webflow |
 | `WARN` | Something odd but not blocking | Read it |
 | `FATAL` | Stopped without writing anything | Yes |
 | `REFUSING` | Wrote schema but declined to publish | No, publish yourself |
@@ -142,6 +142,10 @@ the Finsweet table of contents):
 | `data-faq-richtext-list` | The rich-text block |
 | `data-faq-richtext-heading` | Optional — which heading is a question (default `h3`) |
 
+**Questions must be headings, not bold text.** A question is the heading for its answer: `<h3>`
+says that, `<strong>` just says "louder". Bold questions are invisible to the table of contents
+and to screen readers, and they get no schema — though the run will tell you when it finds them.
+
 The job **hard-fails** rather than quietly wiping schema if these disappear from a page that had
 them. That's deliberate.
 
@@ -151,6 +155,13 @@ them. That's deliberate.
 
 **`FATAL: FAQ attributes missing but legacy accordion markup still present`**
 The FAQ component lost its `data-faq-*` attributes. Nothing was written. Restore them in Webflow.
+
+**`TODO: FAQ block uses bold where headings belong`**
+An FAQ was written as bold text followed by a paragraph. Nothing was marked up, because bold is
+not a heading — and this house style already uses bold lead-ins for emphasis ("What you'll
+notice"), so reading bold as a question would invent FAQs out of body copy. Change those lines to
+**Heading 3** in Webflow and the next run picks them up. Headings also feed the table of contents
+and screen-reader navigation, so they are the right markup regardless of schema.
 
 **`SKIP: has [data-faq-richtext-list] but no questions parsed from it`**
 The attribute is on the wrong block, or the questions aren't `<h3>`. Fix in Webflow, or set

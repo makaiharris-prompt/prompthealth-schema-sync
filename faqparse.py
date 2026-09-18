@@ -201,7 +201,76 @@ def has_richtext_faq(doc):
     return RICHTEXT_ATTR in doc
 
 
+def _richtext_containers(doc, container=None):
+    """Yield (inner_html, open_tag) for every rich-text FAQ container.
+
+    Every container, not just the first: a page can hold more than one, and
+    matching only the first once silently dropped every real question when the
+    blog template gained a hidden schema-output element.
+    """
+    container = container or RICHTEXT_ATTR
+    for m in re.finditer(re.escape(container) + r"[=\s>]", doc):
+        start = doc.rfind("<", 0, m.start())
+        if start == -1:
+            continue
+        t = _TAG.match(doc, start)
+        if not t or container not in t.group(3):
+            continue
+        # An element that OUTPUTS schema is never a source of FAQs, even if it
+        # also carries the FAQ attribute.
+        if SCHEMA_ATTR in t.group(3):
+            continue
+        span = _element_span(doc, start)
+        if span:
+            yield doc[span[0]:span[1]], t.group(3)
+
+
 def _questions_from(inner, open_tag, base, q_tag):
+    """Pull (question, answer) pairs out of one rich-text container."""
+    if q_tag is None:
+        m = re.search(RICHTEXT_HEADING_ATTR + r'\s*=\s*["\']\s*(h[1-6])\s*["\']',
+                      open_tag, re.I)
+        q_tag = m.group(1).lower() if m else DEFAULT_Q_TAG
+
+    rank = int(q_tag[1])
+    # A heading of the same or higher rank ends the current answer.
+    stop = re.compile(r"<h([1-%d])\b" % rank, re.I)
+    heads = list(re.finditer(r"<(%s)\b[^>]*>(.*?)</\1>" % q_tag, inner, re.S | re.I))
+
+    items = []
+    for i, m in enumerate(heads):
+        q = clean_text(m.group(2))
+        tail = inner[m.end():heads[i + 1].start()] if i + 1 < len(heads) else inner[m.end():]
+        nxt = stop.search(tail)
+        a = clean_answer(tail[:nxt.start()] if nxt else tail, base)
+        if q and a:
+            items.append((q, a))
+    return items
+
+
+# A paragraph led by bold text. House style uses this for emphasis ("What
+# you'll notice"), so it is only read as a question when the container has no
+# headings at all -- otherwise every emphasised lead-in becomes an FAQ.
+_BOLD_LEAD = re.compile(r"<p[^>]*>\s*<strong>(.{3,140}?)</strong>", re.S | re.I)
+
+
+def suspected_bold_questions(doc, base="https://www.prompthealth.com"):
+    """FAQ containers that use bold where a heading belongs.
+
+    Returns [] unless a container yields no questions AND contains bold-led
+    paragraphs -- the signature of an FAQ written with bold instead of <h3>.
+    Silence here would mean the block is simply never marked up and nobody
+    finds out, so it is reported rather than guessed at.
+    """
+    found = []
+    for inner, open_tag in _richtext_containers(doc):
+        if _questions_from(inner, open_tag, base, None):
+            continue
+        leads = [clean_text(m.group(1)) for m in _BOLD_LEAD.finditer(inner)]
+        leads = [t for t in leads if t]
+        if leads:
+            found.append((len(leads), leads[0]))
+    return found
     """Pull (question, answer) pairs out of one rich-text container."""
     if q_tag is None:
         m = re.search(RICHTEXT_HEADING_ATTR + r'\s*=\s*["\']\s*(h[1-6])\s*["\']',
@@ -241,26 +310,10 @@ def extract_richtext(doc, base="https://www.prompthealth.com",
     The question heading level defaults to <h3> and can be overridden per
     container with data-faq-richtext-heading="h2".
     """
-    # Every container, not just the first. A page can hold more than one -- the
-    # blog template has a hidden schema-output element alongside the FAQ block,
-    # and matching only the first silently dropped every real question.
     items, n = [], 0
-    for m in re.finditer(re.escape(container) + r"[=\s>]", doc):
-        start = doc.rfind("<", 0, m.start())
-        if start == -1:
-            continue
-        t = _TAG.match(doc, start)
-        if not t or container not in t.group(3):
-            continue
-        # An element that OUTPUTS schema is never a source of FAQs, even if it
-        # also carries the FAQ attribute.
-        if SCHEMA_ATTR in t.group(3):
-            continue
-        span = _element_span(doc, start)
-        if not span:
-            continue
+    for inner, open_tag in _richtext_containers(doc, container):
         n += 1
-        items += _questions_from(doc[span[0]:span[1]], t.group(3), base, q_tag)
+        items += _questions_from(inner, open_tag, base, q_tag)
 
     return {"items": items, "lists": n, "legacy": False,
             "noindex": bool(_NOINDEX.search(doc))}
@@ -274,6 +327,7 @@ def extract_all(doc, base="https://www.prompthealth.com"):
     """
     res = extract(doc, base)
     res["richtext_container"] = has_richtext_faq(doc)
+    res["bold_questions"] = suspected_bold_questions(doc, base)
     res["richtext"] = False
     if res["richtext_container"]:
         items = extract_richtext(doc, base)["items"]

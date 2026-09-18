@@ -535,7 +535,16 @@ def sync_cms(wf, args, summary):
             item = by_path[path]
             # An item not reachable on the host we read from simply isn't
             # published there. Not an error; just not ours to describe.
-            if res.get("noindex") or not res["items"]:
+            if res.get("noindex"):
+                continue
+            if not res["items"]:
+                bold = res.get("bold_questions") or []
+                if bold:
+                    n, sample = bold[0]
+                    summary.append(
+                        f"TODO  {path}: FAQ block uses bold where headings "
+                        f"belong - {n} bold paragraph(s), e.g. {sample[:60]!r}. "
+                        "Nothing was marked up. Change them to <h3> in Webflow.")
                 continue
 
             seen += 1
@@ -725,10 +734,20 @@ def main():
         print(f"FATAL: {fatal} Refusing to write.", file=sys.stderr)
         sys.exit(2)
     for path in empty_rt:
-        summary.append(f"SKIP  {path}: has [data-faq-richtext-list] but no "
-                       "questions parsed from it - check the attribute is on "
-                       "the right rich-text block, or set "
-                       "data-faq-richtext-heading if questions are not <h3>")
+        bold = (results.get(path) or {}).get("bold_questions") or []
+        if bold:
+            n, sample = bold[0]
+            summary.append(
+                f"TODO  {path}: FAQ block uses bold where headings belong - "
+                f"{n} bold paragraph(s), e.g. {sample[:60]!r}. Nothing was "
+                "marked up. Change them to <h3> in Webflow and the next run "
+                "picks them up (headings also feed the table of contents and "
+                "screen readers)")
+        else:
+            summary.append(f"SKIP  {path}: has [data-faq-richtext-list] but no "
+                           "questions parsed from it - check the attribute is on "
+                           "the right rich-text block, or set "
+                           "data-faq-richtext-heading if questions are not <h3>")
     for path in unmigrated:
         summary.append(f"TODO  {path}: has FAQs on an older component with no "
                        "data-faq-* attributes - add them in Webflow to include "

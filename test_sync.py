@@ -659,5 +659,49 @@ class ListItemsFailsLoudly(unittest.TestCase):
             wf.pages()
 
 
+class BoldQuestions(unittest.TestCase):
+    """Marketers write FAQs as bold-then-paragraph. Those are not headings, so
+    nothing gets marked up -- silently. The run reports it instead.
+
+    Bold is NOT read as a question: house style already uses bold lead-ins for
+    emphasis ("What you'll notice" appears 6x in one post, 11x in another), so
+    treating bold as a question would invent FAQs from body copy."""
+
+    BOLD = ('<div data-faq-richtext-list=""><h2>FAQs</h2>'
+            '<p><strong>Can I use bold instead of a heading?</strong></p>'
+            '<p>Apparently, but nothing gets marked up.</p>'
+            '<p><strong>Does it warn me?</strong></p><p>Now it does.</p></div>')
+
+    def test_flags_bold_only_container(self):
+        found = faqparse.suspected_bold_questions(self.BOLD)
+        self.assertEqual(len(found), 1)
+        count, sample = found[0]
+        self.assertEqual(count, 2)
+        self.assertEqual(sample, "Can I use bold instead of a heading?")
+
+    def test_silent_when_headings_exist(self):
+        """Emphasis inside a properly structured block must not be flagged."""
+        doc = ('<div data-faq-richtext-list=""><h3>Proper question?</h3>'
+               '<p>Answer here, long enough.</p>'
+               "<p><strong>What you'll notice</strong></p>"
+               '<p>Emphasis, not a question.</p></div>')
+        self.assertEqual(faqparse.suspected_bold_questions(doc), [])
+
+    def test_bold_is_never_extracted_as_a_question(self):
+        self.assertEqual(faqparse.extract_richtext(self.BOLD)["items"], [])
+
+    def test_no_container_no_report(self):
+        doc = "<p><strong>Just emphasis?</strong></p><p>Body copy.</p>"
+        self.assertEqual(faqparse.suspected_bold_questions(doc), [])
+
+    def test_extract_all_carries_the_signal(self):
+        self.assertTrue(faqparse.extract_all(self.BOLD)["bold_questions"])
+
+    def test_reported_in_both_paths(self):
+        src = open("sync.py").read()
+        self.assertEqual(src.count("uses bold where"), 2,
+                         "expected the report on both the static and CMS paths")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
