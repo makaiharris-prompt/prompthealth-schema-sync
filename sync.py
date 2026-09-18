@@ -517,17 +517,24 @@ def sync_cms(wf, args, summary):
             continue
 
         live = [i for i in items
-                if not i.get("isDraft") and not i.get("isArchived")]
-        for item in live:
-            slug = (item.get("fieldData") or {}).get("slug")
-            if not slug:
-                continue
-            path = f"{prefix}/{slug}"
-            _, res, err = fetch_page(path, args.host)
-            if err:
-                # Not reachable on the host we read from -- an item that is not
-                # published there. Not an error; just not ours to describe.
-                continue
+                if not i.get("isDraft") and not i.get("isArchived")
+                and (i.get("fieldData") or {}).get("slug")]
+
+        # Fetch in parallel, as the static-page pass does. Most items have no
+        # FAQs but every one must be fetched to find out, so serial fetching
+        # made the run scale with collection size rather than with FAQ count.
+        by_path = {f"{prefix}/{(i['fieldData'])['slug']}": i for i in live}
+        fetched = {}
+        with cf.ThreadPoolExecutor(6) as ex:
+            for path, res, err in ex.map(lambda p_: fetch_page(p_, args.host),
+                                         list(by_path)):
+                if not err and res:
+                    fetched[path] = res
+
+        for path, res in sorted(fetched.items()):
+            item = by_path[path]
+            # An item not reachable on the host we read from simply isn't
+            # published there. Not an error; just not ours to describe.
             if res.get("noindex") or not res["items"]:
                 continue
 
@@ -550,7 +557,8 @@ def sync_cms(wf, args, summary):
             if (item.get("fieldData") or {}).get(field) == value:
                 continue
 
-            f = CMS_SNAP / cfg["name"].lower().replace(" ", "-") / f"{slug}.json"
+            f = (CMS_SNAP / cfg["name"].lower().replace(" ", "-")
+                 / f"{item['fieldData']['slug']}.json")
             changed_items.setdefault(cid, []).append(
                 {"id": item["id"], "fieldData": {field: value}})
             changed_items.setdefault(f"_snap:{cid}", []).append(
