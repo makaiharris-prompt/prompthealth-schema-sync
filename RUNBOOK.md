@@ -49,6 +49,7 @@ All in the browser — no terminal, nothing to install.
 | **Write to Webflow** | Off = preview only, changes nothing. On = actually writes schema. |
 | **Allow the gated publish** | Leave **off**. Publishing is done from Webflow. |
 | **Restrict to these paths** | Leave blank for all pages. Or e.g. `/demo,/products/kiosk` to limit it. |
+| **Which site to read from** | `production` normally. `staging` previews your Webflow changes before you publish — it **never writes**, whatever the other boxes say. |
 
 **The two things you'll actually do:**
 
@@ -61,6 +62,23 @@ Click the run to watch it; the summary at the bottom shows every page and what h
 > button, ask to be added as a collaborator.
 
 ---
+
+## Blog posts and other CMS pages
+
+Blog posts work differently from normal pages, because a whole collection shares one template —
+writing schema there would put identical FAQs on every post. Instead each post stores its own
+schema in a CMS field (`faq-schema`) that a hidden element on the template outputs.
+
+Two things follow:
+
+- **Blog schema publishes itself.** CMS items publish individually, so the job ships only the
+  posts it touched. No full-site publish, nothing else riding along — the manual publish step
+  below does not apply to blog posts.
+- **A post needs FAQ markup to be picked up.** Add the FAQ block to the post as usual; the job
+  finds it on the next run. Nothing to configure per post.
+
+Don't edit the `faq-schema` field by hand — the job overwrites it. Your FAQ content lives in the
+`FAQs` field, which the job only ever reads.
 
 ## Publishing
 
