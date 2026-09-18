@@ -80,6 +80,26 @@ Two things follow:
 Don't edit the `faq-schema-embed` field by hand — the job overwrites it. Your FAQ content lives
 in the `FAQs` field, which the job only ever reads.
 
+### Only Blog posts is scanned
+
+Unlike normal pages, CMS collections are **not** auto-discovered. **Blog posts** is the only
+collection the job looks at. Adding FAQs to an item in any other collection — Glossary, Customers,
+anything new — does nothing, and the run won't warn you, because the job never looks there.
+
+Adding a collection is a small job, but it is not self-serve. It needs someone with Designer
+access and someone who can change the code:
+
+1. **In Webflow** — add a multi-line Plain Text field for the schema, put an HTML Embed on that
+   collection's template with the field bound inside a `<script type="application/ld+json">` tag,
+   set the embed's conditional visibility so it only shows when the field isn't empty, give it the
+   `data-richtext-schema` attribute, and add the FAQ attributes to the template.
+2. **In this repo** — one entry in `CMS_COLLECTIONS` in `sync.py` naming the collection, the
+   field, and the URL prefix.
+
+Full details, including why it has to be an HTML Embed rather than the page's SEO settings, are in
+[README.md](README.md#cms-collections). If you want a collection added, open an issue on this repo
+saying which one — don't add the field on your own, since the two halves have to match.
+
 ## Publishing
 
 Schema written by this job sits in Webflow **unpublished** until someone publishes the site.

@@ -177,9 +177,20 @@ CMS_COLLECTIONS = {
 }
 ```
 
-Adding a collection is that entry plus three things in Webflow: the field, an HTML Embed on the
-template containing `<script type="application/ld+json">` with the field bound inside it, and the
-FAQ attributes on the template so the questions can be parsed.
+Adding a collection is that entry plus four things in Webflow:
+
+1. A **multi-line Plain Text** field for the schema.
+2. An **HTML Embed** on the template containing `<script type="application/ld+json">` with the
+   field bound inside it, carrying the `[data-richtext-schema]` attribute.
+3. **Conditional visibility** on that embed, set to show only when the field is not empty.
+   Without it, every item in the collection renders an empty `<script>` tag. Note that Webflow
+   drops the element entirely when the condition fails, so an unexpectedly missing embed usually
+   means the condition is pointing at the wrong field — not that the binding broke.
+4. The **FAQ attributes** on the template, so the questions can be parsed.
+
+Both halves have to land together: the field and the `CMS_COLLECTIONS` entry are useless
+separately, and a mismatch between them writes correct JSON to a field nothing outputs — which
+looks like success from the API. `verify.py` checks for exactly this.
 
 **Why an HTML Embed and not the page-settings JSON-LD field.** Webflow HTML-escapes bindings in
 the page-settings field — `'` becomes `&#39;`, `"` becomes `&quot;` — which turns valid JSON into
