@@ -572,5 +572,45 @@ class RichTextContainers(unittest.TestCase):
         self.assertEqual(faqparse.extract_richtext(doc)["items"][0][1], "Kept text.")
 
 
+class CmsEmbed(unittest.TestCase):
+    """CMS items get schema through a rich-text embed, because page-settings
+    bindings are HTML-escaped and would destroy the JSON."""
+
+    def test_wrapper_matches_webflow_stored_shape(self):
+        doc = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": []}
+        value = sync.EMBED_OPEN + json.dumps(doc, ensure_ascii=False) + sync.EMBED_CLOSE
+        self.assertTrue(value.startswith("<div data-rt-embed-type='true'>"))
+        self.assertIn('<script type="application/ld+json">', value)
+        self.assertTrue(value.endswith("</script></div>"))
+
+    def test_quotes_are_json_escaped_not_html_escaped(self):
+        """The failure mode that killed the page-settings route."""
+        doc = {"@context": "https://schema.org", "@type": "FAQPage",
+               "mainEntity": [{"@type": "Question", "name": 'Has "quotes" & an ampersand?',
+                               "acceptedAnswer": {"@type": "Answer", "text": "A" * 30}}]}
+        value = sync.EMBED_OPEN + json.dumps(doc, ensure_ascii=False) + sync.EMBED_CLOSE
+        self.assertNotIn("&quot;", value)
+        self.assertNotIn("&amp;", value)
+        inner = value[len(sync.EMBED_OPEN):-len(sync.EMBED_CLOSE)]
+        self.assertEqual(json.loads(inner)["mainEntity"][0]["name"],
+                         'Has "quotes" & an ampersand?')
+
+    def test_collections_are_configured_not_hardcoded(self):
+        for cid, cfg in sync.CMS_COLLECTIONS.items():
+            self.assertTrue({"name", "field", "path"} <= set(cfg))
+            self.assertTrue(cfg["path"].startswith("/"))
+
+
+class StagingGuard(unittest.TestCase):
+    def test_apply_against_non_production_is_refused(self):
+        import subprocess
+        r = subprocess.run(
+            [sys.executable, "sync.py", "--host",
+             "https://prompt-health.webflow.io", "--apply"],
+            capture_output=True, text=True)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("REFUSING", r.stdout + r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

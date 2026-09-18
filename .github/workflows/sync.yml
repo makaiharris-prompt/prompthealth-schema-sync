@@ -19,6 +19,11 @@ on:
         description: "Restrict to these paths, comma-separated (blank = all)"
         type: string
         default: ""
+      host:
+        description: "Which site to read FAQs from"
+        type: choice
+        options: [production, staging]
+        default: production
 
 permissions:
   contents: write
@@ -61,13 +66,18 @@ jobs:
           if [ -n "${{ inputs.only }}" ]; then
             ARGS="$ARGS --only ${{ inputs.only }}"
           fi
+          # Staging is preview only. sync.py refuses --apply against a
+          # non-production host anyway; this keeps the run from failing on it.
+          if [ "${{ inputs.host }}" = "staging" ]; then
+            ARGS="$(echo "$ARGS" | sed 's/--apply//; s/--publish//') --host https://prompt-health.webflow.io"
+          fi
           echo "running: sync.py $ARGS"
           python3 sync.py $ARGS 2>&1 | tee run.log
 
       - name: Verify staged schema against the live pages
         # Only meaningful after a write. Runs in CI so nobody needs a token
         # locally; a failure here stops a bad write reaching a publish.
-        if: always() && (github.event_name == 'schedule' || inputs.apply == true)
+        if: always() && inputs.host != 'staging' && (github.event_name == 'schedule' || inputs.apply == true)
         env:
           WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
         run: |

@@ -38,6 +38,22 @@ _UNREAD = object()                      # sentinel: read-back failed
 CUSTOM_DOMAINS = ["www.prompthealth.com", "prompthealth.com",
                   "www.promptemr.com", "promptemr.com"]
 SNAP = Path(__file__).parent / "schemas"
+CMS_SNAP = Path(__file__).parent / "schemas-cms"
+
+# CMS collections whose items carry FAQs. Adding one is config, not code.
+# `field` is the rich-text field the generated schema is written to -- it must
+# be bound to a hidden Rich Text element on that collection's template, since a
+# CMS field only reaches the page if something outputs it.
+CMS_COLLECTIONS = {
+    "67787eea77d43b89f397747b": {"name": "Blog posts",
+                                 "field": "faq-schema-3",
+                                 "path": "/blog"},
+}
+
+# Webflow's rich-text embed wrapper. Bindings elsewhere are HTML-escaped
+# (&#39; for an apostrophe), which would destroy JSON; embeds are not.
+EMBED_OPEN = "<div data-rt-embed-type='true'><script type=\"application/ld+json\">"
+EMBED_CLOSE = "</script></div>"
 STATE = Path(__file__).parent / "state.json"
 UA = "prompthealth-schema-sync/1.0"
 
@@ -142,6 +158,28 @@ class Webflow:
                                  {"jsonLdSchema": doc}, base=BETA)
             results[pid] = (code, None if code in (200, 201, 202) else d)
         return results
+
+    def list_items(self, collection_id):
+        out, offset = [], 0
+        while True:
+            _, d = self._call("GET",
+                              f"collections/{collection_id}/items"
+                              f"?limit=100&offset={offset}")
+            batch = d.get("items", [])
+            out += batch
+            total = d.get("pagination", {}).get("total", len(out))
+            offset += len(batch)
+            if not batch or offset >= total:
+                return out
+
+    def update_items(self, collection_id, items):
+        """items: [{id, fieldData}]"""
+        return self._call("PATCH", f"collections/{collection_id}/items",
+                          {"items": items})
+
+    def publish_items(self, collection_id, item_ids):
+        return self._call("POST", f"collections/{collection_id}/items/publish",
+                          {"itemIds": item_ids})
 
     def publish_page(self, page_id):
         """Single Page Publishing: ships only this page, so unrelated staged
@@ -444,6 +482,100 @@ def assess(results, known):
     return broken, lost, unmigrated, empty_rt, None
 
 
+def sync_cms(wf, args, summary):
+    """Write per-item FAQ schema to CMS collection items.
+
+    Static pages get schema through Webflow's page settings, but a collection
+    is one template page serving many items, so that route would stamp the same
+    schema on every post. Instead each item stores its own schema in a rich-text
+    field rendered by a hidden element on the template.
+
+    Returns (pages_seen, questions, changed_count, failed).
+    """
+    seen = qs = 0
+    changed_items, failed = {}, []
+
+    for cid, cfg in CMS_COLLECTIONS.items():
+        field, prefix = cfg["field"], cfg["path"]
+        try:
+            items = wf.list_items(cid)
+        except Exception as e:                                    # noqa: BLE001
+            failed.append(f"{cfg['name']}: could not list items ({e})")
+            continue
+
+        live = [i for i in items
+                if not i.get("isDraft") and not i.get("isArchived")]
+        for item in live:
+            slug = (item.get("fieldData") or {}).get("slug")
+            if not slug:
+                continue
+            path = f"{prefix}/{slug}"
+            _, res, err = fetch_page(path, args.host)
+            if err:
+                # Not reachable on the host we read from -- an item that is not
+                # published there. Not an error; just not ours to describe.
+                continue
+            if res.get("noindex") or not res["items"]:
+                continue
+
+            seen += 1
+            counts = Counter(q for q, _ in res["items"])
+            kept = [(q, a) for q, a in res["items"] if counts[q] == 1]
+            if not kept:
+                summary.append(f"SKIP  {path}: every question repeated")
+                continue
+            qs += len(kept)
+
+            node = faq_node(BASE + path, kept)
+            doc = {"@context": "https://schema.org", **node}
+            errs = validate_local(path, doc)
+            if errs:
+                failed.append(f"{path}: {'; '.join(errs)}")
+                continue
+
+            value = EMBED_OPEN + json.dumps(doc, ensure_ascii=False) + EMBED_CLOSE
+            if (item.get("fieldData") or {}).get(field) == value:
+                continue
+
+            f = CMS_SNAP / cfg["name"].lower().replace(" ", "-") / f"{slug}.json"
+            changed_items.setdefault(cid, []).append(
+                {"id": item["id"], "fieldData": {field: value}})
+            changed_items.setdefault(f"_snap:{cid}", []).append(
+                (f, json.dumps(doc, indent=2, ensure_ascii=False)))
+
+    n_changed = sum(len(v) for k, v in changed_items.items()
+                    if not str(k).startswith("_snap:"))
+    if not n_changed:
+        return seen, qs, 0, failed
+
+    if not args.apply:
+        return seen, qs, n_changed, failed
+
+    for cid in list(CMS_COLLECTIONS):
+        batch = changed_items.get(cid)
+        if not batch:
+            continue
+        code, d = wf.update_items(cid, batch)
+        if code not in (200, 201, 202):
+            failed.append(f"{CMS_COLLECTIONS[cid]['name']}: write failed "
+                          f"{code} {json.dumps(d)[:200]}")
+            continue
+        # Per-item publish: only the items touched ship, so no staged Designer
+        # work can ride along and the site-level publish gate does not apply.
+        code, d = wf.publish_items(cid, [i["id"] for i in batch])
+        if code not in (200, 201, 202):
+            failed.append(f"{CMS_COLLECTIONS[cid]['name']}: publish failed "
+                          f"{code} {json.dumps(d)[:200]}")
+            continue
+        for f, text in changed_items.get(f"_snap:{cid}", []):
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(text)
+        summary.append(f"CMS   {CMS_COLLECTIONS[cid]['name']}: wrote and "
+                       f"published {len(batch)} item(s)")
+
+    return seen, qs, n_changed, failed
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -463,6 +595,13 @@ def main():
     ap.add_argument("--validate-limit", type=int, default=6,
                     help="max distinct document shapes to send to schema.org per run")
     args = ap.parse_args()
+
+    if args.apply and args.host.rstrip("/") != BASE:
+        sys.exit(f"REFUSING: --apply with --host {args.host}.\n"
+                 "Schema generated from a non-production host describes content "
+                 "the public cannot see; writing it and later publishing would "
+                 "break the guarantee that schema matches what is visible.\n"
+                 "Drop --apply to preview against that host.")
 
     token = os.environ.get("WEBFLOW_API_TOKEN")
     wf = Webflow(token) if token else None
@@ -729,6 +868,8 @@ def main():
                  "--publish to ship it)" if pending else ""))
         return
     if not changed:
+        if not pending:
+            return
         print("\nNo content changes, but schema staged earlier is still "
               "unpublished - attempting to publish it.")
 
