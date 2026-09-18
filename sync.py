@@ -535,17 +535,14 @@ def sync_cms(wf, args, summary):
             item = by_path[path]
             # An item not reachable on the host we read from simply isn't
             # published there. Not an error; just not ours to describe.
-            if res.get("noindex"):
+            if res.get("noindex") or not res["items"]:
                 continue
-            if not res["items"]:
-                bold = res.get("bold_questions") or []
-                if bold:
-                    n, sample = bold[0]
-                    summary.append(
-                        f"TODO  {path}: FAQ block uses bold where headings "
-                        f"belong - {n} bold paragraph(s), e.g. {sample[:60]!r}. "
-                        "Nothing was marked up. Change them to <h3> in Webflow.")
-                continue
+            if res.get("bold_fallback"):
+                summary.append(
+                    f"NOTE  {path}: questions read from bold text, not "
+                    "headings. Schema is correct, but <h3> would also put them "
+                    "in the table of contents and make them navigable by "
+                    "screen reader")
 
             seen += 1
             counts = Counter(q for q, _ in res["items"])
@@ -734,20 +731,10 @@ def main():
         print(f"FATAL: {fatal} Refusing to write.", file=sys.stderr)
         sys.exit(2)
     for path in empty_rt:
-        bold = (results.get(path) or {}).get("bold_questions") or []
-        if bold:
-            n, sample = bold[0]
-            summary.append(
-                f"TODO  {path}: FAQ block uses bold where headings belong - "
-                f"{n} bold paragraph(s), e.g. {sample[:60]!r}. Nothing was "
-                "marked up. Change them to <h3> in Webflow and the next run "
-                "picks them up (headings also feed the table of contents and "
-                "screen readers)")
-        else:
-            summary.append(f"SKIP  {path}: has [data-faq-richtext-list] but no "
-                           "questions parsed from it - check the attribute is on "
-                           "the right rich-text block, or set "
-                           "data-faq-richtext-heading if questions are not <h3>")
+        summary.append(f"SKIP  {path}: has [data-faq-richtext-list] but no "
+                       "questions parsed from it - check the attribute is on "
+                       "the right rich-text block, or set "
+                       "data-faq-richtext-heading if questions are not <h3>")
     for path in unmigrated:
         summary.append(f"TODO  {path}: has FAQs on an older component with no "
                        "data-faq-* attributes - add them in Webflow to include "
@@ -776,7 +763,12 @@ def main():
             summary.append(f"SKIP  {path}: every question repeated; nothing to publish")
             continue
         built[path] = faq_node(BASE + path, kept)
-        if r.get("richtext"):
+        if r.get("bold_fallback"):
+            summary.append(
+                f"NOTE  {path}: questions read from bold text, not headings. "
+                "Schema is correct, but <h3> would also put them in the table "
+                "of contents and make them navigable by screen reader")
+        elif r.get("richtext"):
             summary.append(f"NOTE  {path}: parsed from [data-faq-richtext-list] "
                            "headings (no per-item attributes needed)")
         elif r["lists"] == 0:

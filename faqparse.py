@@ -225,8 +225,33 @@ def _richtext_containers(doc, container=None):
             yield doc[span[0]:span[1]], t.group(3)
 
 
+_BOLD_Q = re.compile(r"<p[^>]*>\s*<strong>(.*?)</strong>", re.S | re.I)
+
+
+def _questions_from_bold(inner, base):
+    """Fallback: questions written as a bold paragraph, then the answer.
+
+    Only used when a container has no question headings at all. Scoped to the
+    container precisely because bold means emphasis everywhere else -- "What
+    you'll notice" appears 6x in one post and 11x in another, all in body copy
+    outside any FAQ block, and reading those as questions would invent FAQs.
+    """
+    marks = list(_BOLD_Q.finditer(inner))
+    items = []
+    for i, m in enumerate(marks):
+        q = clean_text(m.group(1))
+        end = marks[i + 1].start() if i + 1 < len(marks) else len(inner)
+        a = clean_answer(inner[m.end():end], base)
+        if q and a:
+            items.append((q, a))
+    return items
+
+
 def _questions_from(inner, open_tag, base, q_tag):
-    """Pull (question, answer) pairs out of one rich-text container."""
+    """Pull (question, answer) pairs out of one rich-text container.
+
+    Returns (items, used_bold_fallback).
+    """
     if q_tag is None:
         m = re.search(RICHTEXT_HEADING_ATTR + r'\s*=\s*["\']\s*(h[1-6])\s*["\']',
                       open_tag, re.I)
@@ -245,51 +270,10 @@ def _questions_from(inner, open_tag, base, q_tag):
         a = clean_answer(tail[:nxt.start()] if nxt else tail, base)
         if q and a:
             items.append((q, a))
-    return items
-
-
-# A paragraph led by bold text. House style uses this for emphasis ("What
-# you'll notice"), so it is only read as a question when the container has no
-# headings at all -- otherwise every emphasised lead-in becomes an FAQ.
-_BOLD_LEAD = re.compile(r"<p[^>]*>\s*<strong>(.{3,140}?)</strong>", re.S | re.I)
-
-
-def suspected_bold_questions(doc, base="https://www.prompthealth.com"):
-    """FAQ containers that use bold where a heading belongs.
-
-    Returns [] unless a container yields no questions AND contains bold-led
-    paragraphs -- the signature of an FAQ written with bold instead of <h3>.
-    Silence here would mean the block is simply never marked up and nobody
-    finds out, so it is reported rather than guessed at.
-    """
-    found = []
-    for inner, open_tag in _richtext_containers(doc):
-        if _questions_from(inner, open_tag, base, None):
-            continue
-        leads = [clean_text(m.group(1)) for m in _BOLD_LEAD.finditer(inner)]
-        leads = [t for t in leads if t]
-        if leads:
-            found.append((len(leads), leads[0]))
-    return found
-    """Pull (question, answer) pairs out of one rich-text container."""
-    if q_tag is None:
-        m = re.search(RICHTEXT_HEADING_ATTR + r'\s*=\s*["\']\s*(h[1-6])\s*["\']',
-                      open_tag, re.I)
-        q_tag = m.group(1).lower() if m else DEFAULT_Q_TAG
-
-    rank = int(q_tag[1])
-    stop = re.compile(r"<h([1-%d])\b" % rank, re.I)
-    heads = list(re.finditer(r"<(%s)\b[^>]*>(.*?)</\1>" % q_tag, inner, re.S | re.I))
-
-    items = []
-    for i, m in enumerate(heads):
-        q = clean_text(m.group(2))
-        tail = inner[m.end():heads[i + 1].start()] if i + 1 < len(heads) else inner[m.end():]
-        nxt = stop.search(tail)
-        a = clean_answer(tail[:nxt.start()] if nxt else tail, base)
-        if q and a:
-            items.append((q, a))
-    return items
+    if items:
+        return items, False
+    # No headings in this container -- fall back to bold-led questions.
+    return _questions_from_bold(inner, base), True
 
 
 def extract_richtext(doc, base="https://www.prompthealth.com",
@@ -310,12 +294,15 @@ def extract_richtext(doc, base="https://www.prompthealth.com",
     The question heading level defaults to <h3> and can be overridden per
     container with data-faq-richtext-heading="h2".
     """
-    items, n = [], 0
+    items, n, bold = [], 0, 0
     for inner, open_tag in _richtext_containers(doc, container):
         n += 1
-        items += _questions_from(inner, open_tag, base, q_tag)
+        got, used_bold = _questions_from(inner, open_tag, base, q_tag)
+        if got and used_bold:
+            bold += 1
+        items += got
 
-    return {"items": items, "lists": n, "legacy": False,
+    return {"items": items, "lists": n, "bold_fallback": bold, "legacy": False,
             "noindex": bool(_NOINDEX.search(doc))}
 
 
@@ -327,11 +314,12 @@ def extract_all(doc, base="https://www.prompthealth.com"):
     """
     res = extract(doc, base)
     res["richtext_container"] = has_richtext_faq(doc)
-    res["bold_questions"] = suspected_bold_questions(doc, base)
+    res["bold_fallback"] = 0
     res["richtext"] = False
     if res["richtext_container"]:
-        items = extract_richtext(doc, base)["items"]
-        if items:
-            res["items"] = res["items"] + items
+        rt = extract_richtext(doc, base)
+        res["bold_fallback"] = rt["bold_fallback"]
+        if rt["items"]:
+            res["items"] = res["items"] + rt["items"]
             res["richtext"] = True
     return res

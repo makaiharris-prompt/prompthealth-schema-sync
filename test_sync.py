@@ -659,48 +659,57 @@ class ListItemsFailsLoudly(unittest.TestCase):
             wf.pages()
 
 
-class BoldQuestions(unittest.TestCase):
-    """Marketers write FAQs as bold-then-paragraph. Those are not headings, so
-    nothing gets marked up -- silently. The run reports it instead.
+class BoldFallback(unittest.TestCase):
+    """Questions may be written as bold-then-paragraph, but ONLY inside
+    [data-faq-richtext-list] and ONLY when that container has no headings.
 
-    Bold is NOT read as a question: house style already uses bold lead-ins for
-    emphasis ("What you'll notice" appears 6x in one post, 11x in another), so
-    treating bold as a question would invent FAQs from body copy."""
+    The scoping is the whole point: bold means emphasis everywhere else --
+    "What you'll notice" appears 6x in one post and 11x in another, all in body
+    copy -- so an unscoped rule would invent FAQs out of prose."""
 
     BOLD = ('<div data-faq-richtext-list=""><h2>FAQs</h2>'
-            '<p><strong>Can I use bold instead of a heading?</strong></p>'
-            '<p>Apparently, but nothing gets marked up.</p>'
-            '<p><strong>Does it warn me?</strong></p><p>Now it does.</p></div>')
+            '<p><strong>Can I write questions in bold?</strong></p>'
+            '<p>Yes, when the block has no headings at all.</p>'
+            '<p><strong>Do I still get schema?</strong></p>'
+            '<p>You do, parsed from the bold lead-ins.</p></div>')
 
-    def test_flags_bold_only_container(self):
-        found = faqparse.suspected_bold_questions(self.BOLD)
-        self.assertEqual(len(found), 1)
-        count, sample = found[0]
-        self.assertEqual(count, 2)
-        self.assertEqual(sample, "Can I use bold instead of a heading?")
+    def test_bold_questions_are_parsed(self):
+        r = faqparse.extract_richtext(self.BOLD)
+        self.assertEqual([q for q, _ in r["items"]],
+                         ["Can I write questions in bold?", "Do I still get schema?"])
+        self.assertEqual(r["bold_fallback"], 1)
 
-    def test_silent_when_headings_exist(self):
-        """Emphasis inside a properly structured block must not be flagged."""
+    def test_answers_stop_at_the_next_bold_question(self):
+        items = faqparse.extract_richtext(self.BOLD)["items"]
+        self.assertEqual(items[0][1], "Yes, when the block has no headings at all.")
+
+    def test_bold_outside_the_container_is_ignored(self):
+        """The false-positive case that ruled out an unscoped rule."""
+        doc = ("<p><strong>What you'll notice</strong></p><p>Body copy.</p>"
+               '<div data-faq-richtext-list=""><h3>Real question?</h3>'
+               '<p>Real answer here.</p></div>')
+        r = faqparse.extract_richtext(doc)
+        self.assertEqual([q for q, _ in r["items"]], ["Real question?"])
+        self.assertEqual(r["bold_fallback"], 0)
+
+    def test_headings_win_and_bold_emphasis_is_not_a_question(self):
         doc = ('<div data-faq-richtext-list=""><h3>Proper question?</h3>'
-               '<p>Answer here, long enough.</p>'
-               "<p><strong>What you'll notice</strong></p>"
-               '<p>Emphasis, not a question.</p></div>')
-        self.assertEqual(faqparse.suspected_bold_questions(doc), [])
+               "<p>Answer.</p><p><strong>What you'll notice</strong></p>"
+               '<p>Still the answer.</p></div>')
+        r = faqparse.extract_richtext(doc)
+        self.assertEqual([q for q, _ in r["items"]], ["Proper question?"])
+        self.assertEqual(r["bold_fallback"], 0)
+        self.assertIn("What you'll notice", r["items"][0][1])
 
-    def test_bold_is_never_extracted_as_a_question(self):
-        self.assertEqual(faqparse.extract_richtext(self.BOLD)["items"], [])
+    def test_extract_all_carries_the_flag(self):
+        self.assertEqual(faqparse.extract_all(self.BOLD)["bold_fallback"], 1)
+        self.assertEqual(faqparse.extract_all(
+            '<div data-faq-richtext-list=""><h3>Q?</h3><p>A long enough answer.</p></div>'
+        )["bold_fallback"], 0)
 
-    def test_no_container_no_report(self):
-        doc = "<p><strong>Just emphasis?</strong></p><p>Body copy.</p>"
-        self.assertEqual(faqparse.suspected_bold_questions(doc), [])
-
-    def test_extract_all_carries_the_signal(self):
-        self.assertTrue(faqparse.extract_all(self.BOLD)["bold_questions"])
-
-    def test_reported_in_both_paths(self):
+    def test_bold_use_is_reported_on_both_paths(self):
         src = open("sync.py").read()
-        self.assertEqual(src.count("uses bold where"), 2,
-                         "expected the report on both the static and CMS paths")
+        self.assertEqual(src.count("questions read from bold text"), 2)
 
 
 if __name__ == "__main__":
