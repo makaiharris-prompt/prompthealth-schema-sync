@@ -177,6 +177,12 @@ CMS_COLLECTIONS = {
 }
 ```
 
+**Edit it in one place.** `CMS_COLLECTIONS` is defined in `sync.py` and imported by `verify.py`,
+so a collection added there is written *and* verified — there is no second list to keep in step.
+Adding one is a single entry: the collection id as the key, plus `name` (for run output), `field`
+(the schema field's slug, not its label — Webflow cannot rename slugs, so the two often differ) and
+`path` (the URL prefix its items live under, used to build each item's page URL).
+
 Adding a collection is that entry plus four things in Webflow:
 
 1. A **multi-line Plain Text** field for the schema.
