@@ -1,5 +1,6 @@
 """Tests for the rules that decide whether it is safe to write."""
 import json
+import os
 import sys
 import unittest
 
@@ -510,6 +511,40 @@ class BothModes(unittest.TestCase):
         self.assertTrue(r["richtext_container"])
         self.assertFalse(r["richtext"])
         self.assertEqual(r["items"], [])
+
+
+class UnparseableJsonLdIsNamed(unittest.TestCase):
+    """A run failed with 'live page serves unparseable JSON-LD' and it read as
+    our FAQ schema breaking. It was the template's BlogPosting, with a stray
+    newline bound into description. The message must name the block."""
+
+    def verify_mod(self):
+        # verify.py exits at import without a token; nothing here hits the
+        # network, so a placeholder is enough to import and call the helper.
+        os.environ.setdefault("WEBFLOW_API_TOKEN", "test-placeholder")
+        import verify
+        return verify
+
+    def test_names_the_type_of_the_broken_block(self):
+        """The real failure: a literal newline inside a JSON string."""
+        html = ('<script type="application/ld+json">'
+                '{"@type":"BlogPosting","description":"ends in a newline\n"}</script>'
+                '<script type="application/ld+json">{"@type":"FAQPage"}</script>')
+        msg = self.verify_mod().why_unparseable(html)
+        self.assertIn("BlogPosting", msg)
+        self.assertNotIn("FAQPage", msg)          # ours parsed; do not blame it
+
+    def test_empty_block_is_reported_not_skipped(self):
+        """existing_jsonld rejects a page for an empty <script> too, and that
+        is a different fix from a syntax error."""
+        msg = self.verify_mod().why_unparseable(
+            '<script type="application/ld+json"></script>')
+        self.assertIn("empty", msg)
+
+    def test_both_report_sites_use_it(self):
+        src = open("verify.py").read()
+        # The interpolated call, not the def line, which also matches.
+        self.assertEqual(src.count("{why_unparseable(html)}"), 2)
 
 
 class WorkflowAlerts(unittest.TestCase):

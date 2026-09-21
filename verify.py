@@ -20,6 +20,7 @@ Exits non-zero if anything looks wrong. Writes nothing, publishes nothing.
 """
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -35,6 +36,30 @@ def fetch(url):
     req = urllib.request.Request(url, headers={"User-Agent": "verify/1.0"})
     with urllib.request.urlopen(req, timeout=45) as r:
         return r.read().decode("utf-8", "replace")
+
+
+def why_unparseable(html):
+    """Name the JSON-LD block that will not parse, and why.
+
+    "unparseable JSON-LD" alone sends people looking at our FAQ schema when
+    the broken block is usually someone else's -- a template's BlogPosting
+    with a stray newline bound into a string, for instance. Naming the @type
+    points at the right file on the first read.
+    """
+    out = []
+    for i, b in enumerate(faqparse._LDJSON.findall(html)):
+        b = b.strip()
+        # An empty block is not skippable: existing_jsonld rejects the page on
+        # it too, and "empty <script>" is a different fix from a syntax error.
+        if not b:
+            out.append(f"block {i} is an empty <script>")
+            continue
+        try:
+            json.loads(b)
+        except ValueError as e:
+            m = re.search(r'"@type"\s*:\s*"([^"]+)"', b)
+            out.append(f"{m.group(1) if m else 'block ' + str(i)} ({e})")
+    return "; ".join(out) or "every block parsed here - re-check the page"
 
 
 def check_cms(problems):
@@ -78,7 +103,8 @@ def check_cms(problems):
 
             live_nodes, ok = faqparse.existing_jsonld(html)
             if not ok:
-                problems.append(f"{path}: live page serves unparseable JSON-LD")
+                problems.append(f"{path}: live page serves unparseable "
+                                f"JSON-LD - {why_unparseable(html)}")
                 continue
             live_faq = next((n for n in live_nodes
                              if n.get("@type") == "FAQPage"), None)
@@ -150,7 +176,8 @@ def main():
 
         live_nodes, ok = faqparse.existing_jsonld(html)
         if not ok:
-            problems.append(f"{path}: live page serves unparseable JSON-LD")
+            problems.append(f"{path}: live page serves unparseable "
+                            f"JSON-LD - {why_unparseable(html)}")
             continue
         # extract_all, not extract: the same function sync.py uses, so a
         # rich-text page like /faq is not reported as having invented
