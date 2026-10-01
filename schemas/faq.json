@@ -9,7 +9,7 @@
       "name": "How long does it take to get started with Prompt?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "The timeline depends on your chosen go-live date, and our onboarding team handles the heavy lifting. Clinics are typically fully up and running faster than they expect."
+        "text": "The timeline depends on your chosen go-live date, and Prompt's onboarding team guides setup, training, and data migration so your clinic stays operational throughout and feels confident by go-live. Some teams choose to schedule below full capacity for the first few days after go-live to settle in while your onboarding team supports you every step of the way."
       }
     },
     {
@@ -25,7 +25,7 @@
       "name": "Does Prompt handle data migration from our old EMR?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. Prompt's onboarding team manages most of the migration for you. Your part is simple: pull a set of reports from your current Electronic Medical Record (EMR), and Prompt handles the transfer from there. See <a href=\"https://www.prompthealth.com/support\">how we support the transition</a>."
+        "text": "Prompt assists your team with the data migration. Your part is simple: pull a set of reports from your current Electronic Medical Record (EMR), and then Prompt transfers that data into the system. Specifics depend on the EMR you're coming from, so your sales rep can walk you through what this looks like for your practice. See <a href=\"https://www.prompthealth.com/support\">how we support the transition</a>."
       }
     },
     {
@@ -33,7 +33,7 @@
       "name": "How easy is it to train my team on Prompt?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Prompt is designed to be intuitive for every role: clinicians, billers, front desk, and managers. Between dedicated onboarding, role-specific training, video tutorials, and an ongoing success manager, most teams are working confidently within their first few days."
+        "text": "Prompt is designed to be intuitive for every role: <a href=\"https://www.prompthealth.com/roles/clinician\">clinicians</a>, <a href=\"https://www.prompthealth.com/roles/biller\">billers</a>, <a href=\"https://www.prompthealth.com/roles/front-office\">front desk</a>, and <a href=\"https://www.prompthealth.com/roles/manager\">managers</a>. Between dedicated onboarding, role-specific training, video tutorials, and an ongoing success manager, most teams are working confidently within their first few days."
       }
     },
     {
@@ -57,7 +57,7 @@
       "name": "How does Prompt's pricing compare to other EMRs?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Many platforms advertise a lower base price, then charge extra for AI note drafting, claim scrubbing, billing tools, and patient engagement. With Prompt, those capabilities are included, so clinics see stronger ROI through faster documentation, cleaner claims, and fewer cancellations. On average, clinics earn an additional $32,000 per provider in annual revenue, which means Prompt often more than pays for itself. Factor in the full picture, and most practices find it costs less."
+        "text": "Many platforms advertise a low base price, then charge extra for the tools clinics use every day. With Prompt, appointment reminders, digital intake, claim scrubbing, and billing tools are included in your plan. Reminders help reduce no-shows, AI intake speeds up eval documentation, and claim scrubbing catches errors before submission. Compare the total cost, not just the base price, and many practices find Prompt comes out ahead."
       }
     },
     {
@@ -89,7 +89,7 @@
       "name": "What specialties does Prompt support?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Prompt is built exclusively for outpatient rehab therapy. Supported specialties include:\n- Physical therapy (PT)\n- Occupational therapy (OT)\n- Speech-language pathology (SLP)\n- Pediatric therapy\n- Chiropractic\n\nPrompt is not designed for hospitals, acute care, or general medical practices."
+        "text": "Prompt is built exclusively for outpatient rehab therapy. Supported specialties include:\n- <a href=\"https://www.prompthealth.com/specialities/physical-therapy\">Physical therapy</a> (PT)\n- <a href=\"https://www.prompthealth.com/specialities/occupational-therapy\">Occupational therapy</a> (OT)\n- <a href=\"https://www.prompthealth.com/specialities/occupational-therapy\">Speech-language pathology</a> (SLP)\n- <a href=\"https://www.prompthealth.com/specialities/pediatric-therapy\">Pediatric therapy</a>\n- <a href=\"https://www.prompthealth.com/specialities/chiropractic\">Chiropractic</a>\n\nPrompt is not designed for hospitals, acute care, or general medical practices."
       }
     },
     {
@@ -105,7 +105,7 @@
       "name": "What AI capabilities does Prompt include?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Prompt's AI is purpose-built for rehab therapy workflows, not adapted from general medicine tools. Key capabilities include:\n\n• Sidekick: AI scribing with real-time CPT code suggestions and compliance checks during the visit\n• Insight: compliance analytics that score notes, flag risk, and surface coding opportunities\n• AI intake intelligence: Dynamic intake that drafts tailored, discipline-specific evals\n• Visit filling automation: Identifies underbooked patients and fills cancellations automatically\n• AI Google review replies: Drafts review responses in-platform\n\nAI at Prompt is designed to assist clinical and operational decision-making, not replace it. Final decisions remain with your clinicians and staff."
+        "text": "<a href=\"https://www.prompthealth.com/ai-automation\">Prompt's AI</a> is purpose-built for rehab therapy workflows, not adapted from general medicine tools. Key capabilities include:\n\n• <a href=\"https://www.prompthealth.com/products/sidekick\">Sidekick</a>: AI scribing with real-time CPT code suggestions and compliance checks during the visit\n• <a href=\"https://www.prompthealth.com/products/insight\">Insight</a>: compliance analytics that score notes, flag risk, and surface coding opportunities\n• AI intake intelligence: Dynamic intake that drafts tailored, discipline-specific evals\n• Visit filling automation: Identifies underbooked patients and fills cancellations automatically\n• AI Google review replies: Drafts review responses in-platform\n\nAI at Prompt is designed to assist clinical and operational decision-making, not replace it. Final decisions remain with your clinicians and staff."
       }
     },
     {
@@ -113,7 +113,7 @@
       "name": "Does Prompt include billing tools or do I need a separate system?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Billing is native to the Prompt platform, not bolted on. It connects documentation to reimbursement with AI validation, payer rules, eligibility alerts, and auto-posting. Clinics can bill in-house, keep their existing billing service provider, or use Prompt's own US-based RCM team."
+        "text": "<a href=\"https://www.prompthealth.com/solutions/billing\">Billing</a> is native to the Prompt platform, not bolted on. It connects documentation to reimbursement with AI validation, payer rules, eligibility alerts, and auto-posting. Clinics can bill in-house, keep their existing billing service provider, or use Prompt's own US-based RCM team."
       }
     },
     {
@@ -121,7 +121,7 @@
       "name": "What is Prompt RCM?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Prompt RCM is a full-service revenue cycle management option staffed by a US-based billing team. It's built directly into the platform, giving you real-time financial visibility alongside full claims handling, denial management, and collections support."
+        "text": "<a href=\"https://www.prompthealth.com/products/rcm\">Prompt RCM</a> is an optional, full-service revenue cycle management (RCM) service for physical therapy (PT), occupational therapy (OT), and speech-language pathology (SLP) practices on Prompt. A US-based team of certified billing professionals handles your claims, denials, and collections."
       }
     },
     {
@@ -137,7 +137,7 @@
       "name": "What does Prompt's support look like?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Support comes from a US-based team that includes licensed clinicians and certified billers, not bots, not offshore agents. Every account gets dedicated contacts for clinical, billing, and EDI questions. Our support team holds a 90% support satisfaction rating and a +81 Net Promoter Score."
+        "text": "<a href=\"https://www.prompthealth.com/support\">Support </a>comes from a US-based team that includes licensed clinicians and certified billers, not bots, not offshore agents. Every account gets dedicated contacts for clinical, billing, and EDI questions. Our support team holds a 90% support satisfaction rating and a +81 Net Promoter Score."
       }
     },
     {
@@ -169,7 +169,7 @@
       "name": "What happens if I'm currently in a contract with another EMR?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Contact our sales team. We regularly work with clinics navigating transitions from other platforms and can help you think through timing and options."
+        "text": "Contact our sales team. We regularly work with clinics navigating transitions from other platforms and can help you think through timing and options. Prompt also offers a <a href=\"https://www.prompthealth.com/contract-buyout\">contract buyout program</a> that helps you move to Prompt even when you're locked into a long-term agreement with your current EMR."
       }
     },
     {
@@ -185,7 +185,7 @@
       "name": "Who built Prompt Health?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Prompt Health was founded in 2017 by Mike Dwyer and Adam Baliatico and launched its first product in 2019. It's headquartered in Hoboken, New Jersey. The company is privately held, focused on long-term partnership with clinics, not short-term investor returns."
+        "text": "Prompt Health was founded in 2017 by Mike Dwyer and Adam Baliatico and launched its first product in 2019. It's headquartered in Hoboken, New Jersey. The <a href=\"https://www.prompthealth.com/company\">company </a>is privately held, focused on long-term partnership with clinics, not short-term investor returns."
       }
     },
     {
@@ -193,7 +193,7 @@
       "name": "How many clinics use Prompt Health?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Prompt Health is used by 1,000+ outpatient rehab therapy practices across the United States."
+        "text": "Prompt Health is used by thousands of outpatient rehab therapy practices across the United States."
       }
     },
     {
